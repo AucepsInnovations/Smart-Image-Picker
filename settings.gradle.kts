@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Smart Image Picker"
 include(":app")
+include(":smart-image-picker")
