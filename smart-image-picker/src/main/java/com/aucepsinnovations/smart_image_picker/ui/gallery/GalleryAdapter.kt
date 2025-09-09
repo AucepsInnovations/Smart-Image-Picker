@@ -36,7 +36,8 @@ class GalleryAdapter(
     inner class ViewHolder(private val binding: ItemGalleryBinding) :
         RecyclerView.ViewHolder(binding.root) {
         fun onBind(position: Int) {
-
+            val image = imageList[position]
+            binding.ivImage.setImageURI(image)
         }
     }
 
