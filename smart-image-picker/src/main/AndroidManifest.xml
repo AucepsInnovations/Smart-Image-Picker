@@ -18,7 +18,7 @@
             android:windowSoftInputMode="adjustResize"
             tools:replace="android:theme" />
         <activity
-            android:name=".camera.camerax.CameraActivity"
+            android:name=".camera.CameraActivity"
             android:exported="false"
             android:launchMode="singleTop"
             android:theme="@style/LibraryTheme"
