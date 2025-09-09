@@ -18,10 +18,17 @@
             android:windowSoftInputMode="adjustResize"
             tools:replace="android:theme" />
         <activity
-            android:name=".camera.CameraActivity"
+            android:name=".ui.camera.CameraActivity"
             android:exported="false"
             android:launchMode="singleTop"
             android:theme="@style/LibraryTheme"
+            android:windowSoftInputMode="adjustResize"
+            tools:replace="android:theme" />
+        <activity
+            android:name=".ui.gallery.GalleryActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar"
             android:windowSoftInputMode="adjustResize"
             tools:replace="android:theme" />
     </application>

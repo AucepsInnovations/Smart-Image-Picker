@@ -1,9 +1,8 @@
-package com.aucepsinnovations.smart_image_picker.camera
+package com.aucepsinnovations.smart_image_picker.ui.camera
 
-import android.content.ContentValues
-import android.os.Build
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
 import android.util.Log
 import android.view.View
 import android.widget.Toast
@@ -14,9 +13,10 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
+import com.aucepsinnovations.smart_image_picker.core.api.PickerConfig
 import com.aucepsinnovations.smart_image_picker.databinding.ActivityCameraBinding
-import java.text.SimpleDateFormat
-import java.util.Locale
+import com.aucepsinnovations.smart_image_picker.ui.gallery.GalleryActivity
+import java.io.File
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -25,11 +25,15 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var binding: ActivityCameraBinding
     private lateinit var cameraExecutor: ExecutorService
     private var imageCapture: ImageCapture? = null
+    private val capturedImages = mutableListOf<Uri>()
+    private var pickerConfig: PickerConfig? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityCameraBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        pickerConfig = intent.getParcelableExtra("config")
 
         initUI()
         startCamera()
@@ -46,31 +50,15 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun takePhoto() {
-        // Get a stable reference of the modifiable image capture use case
         val imageCapture = imageCapture ?: return
 
-        // Create time stamped name and MediaStore entry.
-        val name = SimpleDateFormat(FILENAME_FORMAT, Locale.US)
-            .format(System.currentTimeMillis())
-        val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
-            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/CameraX-Image")
-            }
-        }
+        val photoFile = File(
+            externalCacheDir,
+            "${System.currentTimeMillis()}.jpg"
+        )
 
-        // Create output options object which contains file + metadata
-        val outputOptions = ImageCapture.OutputFileOptions
-            .Builder(
-                contentResolver,
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                contentValues
-            )
-            .build()
+        val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
 
-        // Set up image capture listener, which is triggered after photo has
-        // been taken
         imageCapture.takePicture(
             outputOptions,
             ContextCompat.getMainExecutor(this),
@@ -79,11 +67,10 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
                     Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
                 }
 
-                override fun
-                        onImageSaved(output: ImageCapture.OutputFileResults) {
-                    val msg = "Photo capture succeeded: ${output.savedUri}"
-                    Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
-                    Log.d(TAG, msg)
+                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+                    val uri = Uri.fromFile(photoFile)
+                    capturedImages.add(uri) // add to your list
+                    Toast.makeText(baseContext, "Photo added", Toast.LENGTH_SHORT).show()
                 }
             }
         )
@@ -134,7 +121,11 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
         with(binding) {
             when (view) {
                 btnGallery -> {
-
+                    val intent = Intent(this@CameraActivity, GalleryActivity::class.java).apply {
+                        putParcelableArrayListExtra("IMAGES", ArrayList(capturedImages))
+                        putExtra("config", pickerConfig)
+                    }
+                    startActivity(intent)
                 }
 
                 btnCapture -> {

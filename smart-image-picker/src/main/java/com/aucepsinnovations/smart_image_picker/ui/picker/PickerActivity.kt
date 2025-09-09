@@ -14,9 +14,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.aucepsinnovations.smart_image_picker.R
-import com.aucepsinnovations.smart_image_picker.camera.CameraActivity
 import com.aucepsinnovations.smart_image_picker.core.api.PickerConfig
 import com.aucepsinnovations.smart_image_picker.databinding.ActivityPickerBinding
+import com.aucepsinnovations.smart_image_picker.ui.camera.CameraActivity
 
 class PickerActivity : AppCompatActivity(), View.OnClickListener {
 
@@ -106,6 +106,7 @@ class PickerActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun startCamera() {
         val intent = Intent(this@PickerActivity, CameraActivity::class.java)
+        intent.putExtra("config", pickerConfig)
         startActivity(intent)
     }
 
