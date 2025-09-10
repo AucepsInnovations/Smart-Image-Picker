@@ -148,4 +148,9 @@ class GalleryActivity : AppCompatActivity() {
             else -> super.onOptionsItemSelected(item)
         }
     }
+
+    override fun onPause() {
+        super.onPause()
+        SharedData.images = galleryAdapter.getImageList()
+    }
 }

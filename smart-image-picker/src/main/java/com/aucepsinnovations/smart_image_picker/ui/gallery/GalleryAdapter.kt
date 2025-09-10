@@ -58,4 +58,8 @@ class GalleryAdapter(
         imageList.addAll(list)
         notifyDataSetChanged()
     }
+
+    fun getImageList(): MutableList<Uri> {
+        return imageList
+    }
 }
