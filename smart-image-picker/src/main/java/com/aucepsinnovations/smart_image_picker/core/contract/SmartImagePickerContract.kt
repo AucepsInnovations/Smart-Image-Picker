@@ -6,6 +6,7 @@ import android.content.Intent
 import androidx.activity.result.contract.ActivityResultContract
 import com.aucepsinnovations.smart_image_picker.core.api.PickerConfig
 import com.aucepsinnovations.smart_image_picker.core.api.PickerResult
+import com.aucepsinnovations.smart_image_picker.core.util.Constants
 import com.aucepsinnovations.smart_image_picker.ui.picker.PickerActivity
 
 class SmartImagePickerContract : ActivityResultContract<PickerConfig, PickerResult>() {
@@ -13,7 +14,7 @@ class SmartImagePickerContract : ActivityResultContract<PickerConfig, PickerResu
         context: Context,
         input: PickerConfig
     ): Intent {
-        return Intent(context, PickerActivity::class.java).putExtra("config", input)
+        return Intent(context, PickerActivity::class.java).putExtra(Constants.CONFIG, input)
     }
 
     override fun parseResult(
@@ -21,6 +22,6 @@ class SmartImagePickerContract : ActivityResultContract<PickerConfig, PickerResu
         intent: Intent?
     ): PickerResult {
         if (resultCode != Activity.RESULT_OK || intent == null) return PickerResult.Canceled
-        return intent.getParcelableExtra("result") ?: PickerResult.Canceled
+        return intent.getParcelableExtra(Constants.RESULT) ?: PickerResult.Canceled
     }
 }

@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import au.com.elegantmedia.chat.util.recycler_view_item_decoration.GridSpaceItemDecoration
 import com.aucepsinnovations.smart_image_picker.R
 import com.aucepsinnovations.smart_image_picker.core.api.PickerConfig
+import com.aucepsinnovations.smart_image_picker.core.util.Constants
 import com.aucepsinnovations.smart_image_picker.core.util.dpToPx
 import com.aucepsinnovations.smart_image_picker.core.util.makeInvisible
 import com.aucepsinnovations.smart_image_picker.core.util.visible
@@ -35,7 +36,7 @@ class GalleryActivity : AppCompatActivity() {
             insets
         }
 
-        pickerConfig = intent.getParcelableExtra("config")
+        pickerConfig = intent.getParcelableExtra(Constants.CONFIG)
 
         initUI()
         initActionBar()
