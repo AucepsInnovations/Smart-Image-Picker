@@ -19,9 +19,7 @@ import androidx.core.content.ContextCompat
 import com.aucepsinnovations.smart_image_picker.R
 import com.aucepsinnovations.smart_image_picker.core.api.PickerConfig
 import com.aucepsinnovations.smart_image_picker.core.util.Constants
-import com.aucepsinnovations.smart_image_picker.core.util.SharedData
 import com.aucepsinnovations.smart_image_picker.databinding.ActivityCameraBinding
-import com.aucepsinnovations.smart_image_picker.ui.gallery.GalleryActivity
 import com.yalantis.ucrop.UCrop
 import java.io.File
 import java.util.concurrent.ExecutorService
@@ -55,7 +53,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
                 val data = result.data
                 val resultUri = data?.let { UCrop.getOutput(it) }
                 resultUri?.let { uri ->
-                    SharedData.images.add(uri)// keep in-memory list
+                    onImageCaptured(uri)
                     Toast.makeText(this, "Photo cropped & ready", Toast.LENGTH_SHORT).show()
                 }
             } else if (result.resultCode == UCrop.RESULT_ERROR) {
@@ -209,11 +207,19 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
         handler.postDelayed(timeoutRunnable, TIMEOUT_IN_MS)
     }
 
+    private fun onImageCaptured(croppedUri: Uri) {
+        val resultIntent = Intent().apply {
+            putExtra(Constants.CROPPED_IMAGE_URI, croppedUri.toString())
+        }
+        setResult(RESULT_OK, resultIntent).also {
+            finish()
+        }
+    }
+
     override fun onClick(view: View) {
         when (view.id) {
             R.id.ibtn_gallery -> {
-                val intent = Intent(this, GalleryActivity::class.java)
-                startActivity(intent)
+                onBackPressedDispatcher.onBackPressed()
             }
 
             R.id.ibtn_capture -> takePhoto()

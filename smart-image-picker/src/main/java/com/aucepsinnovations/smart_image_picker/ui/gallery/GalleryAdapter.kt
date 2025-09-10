@@ -52,14 +52,14 @@ class GalleryAdapter(
             }
         }
         notifyItemMoved(fromPosition, toPosition)
+        onListChanged?.invoke(imageList)
     }
 
-    fun addImageList(list: List<Uri>) {
+    fun setImageList(list: List<Uri>) {
+        imageList.clear()
         imageList.addAll(list)
         notifyDataSetChanged()
     }
 
-    fun getImageList(): MutableList<Uri> {
-        return imageList
-    }
+    var onListChanged: ((List<Uri>) -> Unit)? = null
 }

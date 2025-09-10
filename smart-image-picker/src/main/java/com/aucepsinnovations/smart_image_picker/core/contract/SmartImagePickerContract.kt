@@ -7,14 +7,14 @@ import androidx.activity.result.contract.ActivityResultContract
 import com.aucepsinnovations.smart_image_picker.core.api.PickerConfig
 import com.aucepsinnovations.smart_image_picker.core.api.PickerResult
 import com.aucepsinnovations.smart_image_picker.core.util.Constants
-import com.aucepsinnovations.smart_image_picker.ui.picker.PickerActivity
+import com.aucepsinnovations.smart_image_picker.ui.gallery.GalleryActivity
 
 class SmartImagePickerContract : ActivityResultContract<PickerConfig, PickerResult>() {
     override fun createIntent(
         context: Context,
         input: PickerConfig
     ): Intent {
-        return Intent(context, PickerActivity::class.java).putExtra(Constants.CONFIG, input)
+        return Intent(context, GalleryActivity::class.java).putExtra(Constants.CONFIG, input)
     }
 
     override fun parseResult(

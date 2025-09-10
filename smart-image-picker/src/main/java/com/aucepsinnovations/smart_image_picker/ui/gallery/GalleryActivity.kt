@@ -1,10 +1,14 @@
 package com.aucepsinnovations.smart_image_picker.ui.gallery
 
+import android.content.Intent
 import android.os.Bundle
 import android.text.Html
 import android.view.Menu
 import android.view.MenuItem
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.GridLayoutManager
@@ -14,17 +18,18 @@ import au.com.elegantmedia.chat.util.recycler_view_item_decoration.GridSpaceItem
 import com.aucepsinnovations.smart_image_picker.R
 import com.aucepsinnovations.smart_image_picker.core.api.PickerConfig
 import com.aucepsinnovations.smart_image_picker.core.util.Constants
-import com.aucepsinnovations.smart_image_picker.core.util.SharedData
 import com.aucepsinnovations.smart_image_picker.core.util.dpToPx
 import com.aucepsinnovations.smart_image_picker.core.util.makeInvisible
 import com.aucepsinnovations.smart_image_picker.core.util.visible
 import com.aucepsinnovations.smart_image_picker.databinding.ActivityGalleryBinding
+import com.aucepsinnovations.smart_image_picker.ui.camera.CameraActivity
 
 class GalleryActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityGalleryBinding
     private var pickerConfig: PickerConfig? = null
     private lateinit var galleryAdapter: GalleryAdapter
+    private val viewModel: GalleryViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,9 +48,10 @@ class GalleryActivity : AppCompatActivity() {
         initActionBar()
         initRecycler()
 
-        galleryAdapter.addImageList(SharedData.images)
-
-        handleVisibility()
+        viewModel.images.observe(this) { uris ->
+            galleryAdapter.setImageList(uris)
+            handleVisibility()
+        }
     }
 
     private fun initUI() {
@@ -57,11 +63,7 @@ class GalleryActivity : AppCompatActivity() {
     private fun initActionBar() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.apply {
-            title = Html.fromHtml("<font color='#ffffff'>Gallery</font>");
-            setDisplayHomeAsUpEnabled(true)
-            setDisplayShowHomeEnabled(true)
-            setDisplayShowTitleEnabled(true)
-            setHomeAsUpIndicator(R.drawable.ic_outline_arrow_back_24)
+            title = Html.fromHtml("<font color='#ffffff'>Choose or Capture Image</font>");
         }
 
         binding.toolbar.apply {
@@ -73,7 +75,12 @@ class GalleryActivity : AppCompatActivity() {
 
     private fun initRecycler() {
         with(binding) {
-            galleryAdapter = GalleryAdapter(mutableListOf())
+            galleryAdapter = GalleryAdapter(mutableListOf()).apply {
+                this.onListChanged = { updatedList ->
+                    viewModel.setImages(updatedList.toMutableList())
+                }
+            }
+
             rvGallery.apply {
                 layoutManager = GridLayoutManager(this@GalleryActivity, 2)
                 adapter = galleryAdapter
@@ -99,6 +106,22 @@ class GalleryActivity : AppCompatActivity() {
                 tvEmpty.makeInvisible()
             }
         }
+    }
+
+    private val cameraLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val uriString = result.data?.getStringExtra(Constants.CROPPED_IMAGE_URI)
+                uriString?.let {
+                    val croppedUri = it.toUri()
+                    viewModel.addImage(croppedUri) // ✅ Add to ViewModel so gallery updates
+                }
+            }
+        }
+
+    private fun openCamera() {
+        val intent = Intent(this, CameraActivity::class.java)
+        cameraLauncher.launch(intent)
     }
 
     private fun enableDragAndDrop(recyclerView: RecyclerView, adapter: GalleryAdapter) {
@@ -136,21 +159,16 @@ class GalleryActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
+        when (item.itemId) {
             R.id.action_open_camera -> {
-                true
+                openCamera()
             }
 
             R.id.action_open_gallery -> {
-                true
+
             }
-
-            else -> super.onOptionsItemSelected(item)
         }
-    }
 
-    override fun onPause() {
-        super.onPause()
-        SharedData.images = galleryAdapter.getImageList()
+        return super.onOptionsItemSelected(item)
     }
 }
