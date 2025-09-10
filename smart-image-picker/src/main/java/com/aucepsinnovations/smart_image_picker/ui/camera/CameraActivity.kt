@@ -19,6 +19,7 @@ import androidx.core.content.ContextCompat
 import com.aucepsinnovations.smart_image_picker.R
 import com.aucepsinnovations.smart_image_picker.core.api.PickerConfig
 import com.aucepsinnovations.smart_image_picker.core.util.Constants
+import com.aucepsinnovations.smart_image_picker.core.util.SharedData
 import com.aucepsinnovations.smart_image_picker.databinding.ActivityCameraBinding
 import com.aucepsinnovations.smart_image_picker.ui.gallery.GalleryActivity
 import com.yalantis.ucrop.UCrop
@@ -32,7 +33,6 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var cameraExecutor: ExecutorService
     private lateinit var preview: Preview
     private var imageCapture: ImageCapture? = null
-    private val capturedImages = mutableListOf<Uri>()
     private var pickerConfig: PickerConfig? = null
     private var lensFacing: Int = CameraSelector.LENS_FACING_BACK
     private var cameraProvider: ProcessCameraProvider? = null
@@ -55,7 +55,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
                 val data = result.data
                 val resultUri = data?.let { UCrop.getOutput(it) }
                 resultUri?.let { uri ->
-                    capturedImages.add(uri) // keep in-memory list
+                    SharedData.images.add(uri)// keep in-memory list
                     Toast.makeText(this, "Photo cropped & ready", Toast.LENGTH_SHORT).show()
                 }
             } else if (result.resultCode == UCrop.RESULT_ERROR) {
@@ -212,10 +212,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
     override fun onClick(view: View) {
         when (view.id) {
             R.id.ibtn_gallery -> {
-                val intent = Intent(this, GalleryActivity::class.java).apply {
-                    putParcelableArrayListExtra("IMAGES", ArrayList(capturedImages))
-                    putExtra(Constants.CONFIG, pickerConfig)
-                }
+                val intent = Intent(this, GalleryActivity::class.java)
                 startActivity(intent)
             }
 

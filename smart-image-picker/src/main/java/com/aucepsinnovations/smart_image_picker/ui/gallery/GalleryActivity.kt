@@ -1,6 +1,5 @@
 package com.aucepsinnovations.smart_image_picker.ui.gallery
 
-import android.net.Uri
 import android.os.Bundle
 import android.text.Html
 import android.view.Menu
@@ -15,6 +14,7 @@ import au.com.elegantmedia.chat.util.recycler_view_item_decoration.GridSpaceItem
 import com.aucepsinnovations.smart_image_picker.R
 import com.aucepsinnovations.smart_image_picker.core.api.PickerConfig
 import com.aucepsinnovations.smart_image_picker.core.util.Constants
+import com.aucepsinnovations.smart_image_picker.core.util.SharedData
 import com.aucepsinnovations.smart_image_picker.core.util.dpToPx
 import com.aucepsinnovations.smart_image_picker.core.util.makeInvisible
 import com.aucepsinnovations.smart_image_picker.core.util.visible
@@ -25,7 +25,6 @@ class GalleryActivity : AppCompatActivity() {
     private lateinit var binding: ActivityGalleryBinding
     private var pickerConfig: PickerConfig? = null
     private lateinit var galleryAdapter: GalleryAdapter
-    private var capturedImages = mutableListOf<Uri>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,10 +43,7 @@ class GalleryActivity : AppCompatActivity() {
         initActionBar()
         initRecycler()
 
-        intent.getParcelableArrayListExtra<Uri>("IMAGES")?.let {
-            capturedImages = it
-            galleryAdapter.addImageList(capturedImages)
-        }
+        galleryAdapter.addImageList(SharedData.images)
 
         handleVisibility()
     }
