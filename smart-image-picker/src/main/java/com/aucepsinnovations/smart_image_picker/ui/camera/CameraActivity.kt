@@ -13,6 +13,7 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
+import com.aucepsinnovations.smart_image_picker.R
 import com.aucepsinnovations.smart_image_picker.core.api.PickerConfig
 import com.aucepsinnovations.smart_image_picker.databinding.ActivityCameraBinding
 import com.aucepsinnovations.smart_image_picker.ui.gallery.GalleryActivity
@@ -27,6 +28,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
     private var imageCapture: ImageCapture? = null
     private val capturedImages = mutableListOf<Uri>()
     private var pickerConfig: PickerConfig? = null
+    private var lensFacing: Int = CameraSelector.LENS_FACING_BACK
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,9 +45,9 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun initUI() {
         with(binding) {
-            btnGallery.setOnClickListener(this@CameraActivity)
-            btnCapture.setOnClickListener(this@CameraActivity)
-            btnDone.setOnClickListener(this@CameraActivity)
+            ibtnGallery.setOnClickListener(this@CameraActivity)
+            ibtnCapture.setOnClickListener(this@CameraActivity)
+            ibtnSwitchCamera.setOnClickListener(this@CameraActivity)
         }
     }
 
@@ -94,7 +96,9 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
                 .build()
 
             // Select back camera as a default
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+            val cameraSelector = CameraSelector.Builder()
+                .requireLensFacing(lensFacing)
+                .build()
 
             try {
                 // Unbind use cases before rebinding
@@ -120,7 +124,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
     override fun onClick(view: View?) {
         with(binding) {
             when (view) {
-                btnGallery -> {
+                ibtnGallery -> {
                     val intent = Intent(this@CameraActivity, GalleryActivity::class.java).apply {
                         putParcelableArrayListExtra("IMAGES", ArrayList(capturedImages))
                         putExtra("config", pickerConfig)
@@ -128,14 +132,58 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
                     startActivity(intent)
                 }
 
-                btnCapture -> {
+                ibtnCapture -> {
                     takePhoto()
                 }
 
-                btnDone -> {}
+                ibtnSwitchCamera -> {
+                    switchCamera()
+                }
             }
         }
     }
+
+    private fun switchCamera() {
+        val newLensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
+            CameraSelector.LENS_FACING_FRONT
+        } else {
+            CameraSelector.LENS_FACING_BACK
+        }
+
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+        cameraProviderFuture.addListener({
+            val cameraProvider = cameraProviderFuture.get()
+            val preview = Preview.Builder().build().also {
+                it.setSurfaceProvider(binding.viewFinder.surfaceProvider)
+            }
+
+            imageCapture = ImageCapture.Builder().build()
+
+            val cameraSelector = CameraSelector.Builder()
+                .requireLensFacing(newLensFacing)
+                .build()
+
+            try {
+                cameraProvider.unbindAll()
+                cameraProvider.bindToLifecycle(
+                    this, cameraSelector, preview, imageCapture
+                )
+
+                lensFacing = newLensFacing
+                binding.ibtnSwitchCamera.setImageResource(
+                    if (lensFacing == CameraSelector.LENS_FACING_BACK)
+                        R.drawable.ic_mobile_camera_front_48px
+                    else
+                        R.drawable.ic_mobile_camera_rear_48px
+                )
+
+            } catch (exc: Exception) {
+                exc.printStackTrace()
+                Toast.makeText(this, "Unable to switch camera", Toast.LENGTH_SHORT).show()
+            }
+        }, ContextCompat.getMainExecutor(this))
+    }
+
 
     companion object {
         private const val TAG = "CameraXApp"
