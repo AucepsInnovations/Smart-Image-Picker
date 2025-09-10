@@ -5,4 +5,7 @@
     <string name="info_permission">Permission permanently denied. Please enable it in Settings.</string>
     <string name="info_permission_denied">Permission request denied</string>
     <string name="info_empty_photos">You don’t have any photos yet</string>
+    <string name="action_done">Done</string>
+    <string name="action_open_camera">Open Camera</string>
+    <string name="action_open_gallery">Open Gallery</string>
 </resources>

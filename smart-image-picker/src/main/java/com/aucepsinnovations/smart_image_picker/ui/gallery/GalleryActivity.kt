@@ -3,6 +3,8 @@ package com.aucepsinnovations.smart_image_picker.ui.gallery
 import android.net.Uri
 import android.os.Bundle
 import android.text.Html
+import android.view.Menu
+import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -132,5 +134,22 @@ class GalleryActivity : AppCompatActivity() {
         itemTouchHelper.attachToRecyclerView(recyclerView)
     }
 
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_gallery, menu)
+        return true
+    }
 
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_open_camera -> {
+                true
+            }
+
+            R.id.action_open_gallery -> {
+                true
+            }
+
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
 }
