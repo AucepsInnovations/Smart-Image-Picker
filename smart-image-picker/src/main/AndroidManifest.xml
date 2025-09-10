@@ -28,7 +28,7 @@
             android:name=".ui.gallery.GalleryActivity"
             android:exported="false"
             android:launchMode="singleTop"
-            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar"
+            android:theme="@style/LibraryTheme"
             android:windowSoftInputMode="adjustResize"
             tools:replace="android:theme" />
         <activity

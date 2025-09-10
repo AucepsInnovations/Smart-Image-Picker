@@ -9,4 +9,6 @@
     <string name="action_open_camera">Open Camera</string>
     <string name="action_open_gallery">Open Gallery</string>
     <string name="info_timeout_camera">You will be logged out in 10 seconds due to inactivity</string>
+    <string name="action_capture_from_camera">Capture from Camera</string>
+    <string name="action_choose_from_gallery">Choose from Gallery</string>
 </resources>

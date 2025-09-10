@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.text.Html
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -24,7 +25,7 @@ import com.aucepsinnovations.smart_image_picker.core.util.visible
 import com.aucepsinnovations.smart_image_picker.databinding.ActivityGalleryBinding
 import com.aucepsinnovations.smart_image_picker.ui.camera.CameraActivity
 
-class GalleryActivity : AppCompatActivity() {
+class GalleryActivity : AppCompatActivity(), View.OnClickListener {
 
     private lateinit var binding: ActivityGalleryBinding
     private var pickerConfig: PickerConfig? = null
@@ -55,8 +56,13 @@ class GalleryActivity : AppCompatActivity() {
     }
 
     private fun initUI() {
-        pickerConfig?.let {
-            binding.clMain.setBackgroundColor(it.backgroundColor)
+        with(binding) {
+            btnOpenCamera.setOnClickListener(this@GalleryActivity)
+            btnOpenGallery.setOnClickListener(this@GalleryActivity)
+
+            pickerConfig?.let {
+                clMain.setBackgroundColor(it.backgroundColor)
+            }
         }
     }
 
@@ -153,6 +159,16 @@ class GalleryActivity : AppCompatActivity() {
         itemTouchHelper.attachToRecyclerView(recyclerView)
     }
 
+    override fun onClick(view: View?) {
+        when (view?.id) {
+            R.id.btn_open_camera -> {
+                openCamera()
+            }
+
+            R.id.btn_open_gallery -> {}
+        }
+    }
+
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_gallery, menu)
         return true
@@ -160,11 +176,7 @@ class GalleryActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.action_open_camera -> {
-                openCamera()
-            }
-
-            R.id.action_open_gallery -> {
+            R.id.action_done -> {
 
             }
         }
