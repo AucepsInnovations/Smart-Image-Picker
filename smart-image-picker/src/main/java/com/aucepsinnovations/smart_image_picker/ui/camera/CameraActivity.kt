@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -18,6 +19,7 @@ import com.aucepsinnovations.smart_image_picker.core.api.PickerConfig
 import com.aucepsinnovations.smart_image_picker.core.util.Constants
 import com.aucepsinnovations.smart_image_picker.databinding.ActivityCameraBinding
 import com.aucepsinnovations.smart_image_picker.ui.gallery.GalleryActivity
+import com.yalantis.ucrop.UCrop
 import java.io.File
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -32,6 +34,22 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
     private var pickerConfig: PickerConfig? = null
     private var lensFacing: Int = CameraSelector.LENS_FACING_BACK
     private var cameraProvider: ProcessCameraProvider? = null
+
+    private val cropImageLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val data = result.data
+                val resultUri = data?.let { UCrop.getOutput(it) }
+                resultUri?.let { uri ->
+                    capturedImages.add(uri) // keep in-memory list
+                    Toast.makeText(this, "Photo cropped & ready", Toast.LENGTH_SHORT).show()
+                }
+            } else if (result.resultCode == UCrop.RESULT_ERROR) {
+                val cropError = UCrop.getError(result.data!!)
+                Toast.makeText(this, "Crop failed: ${cropError?.message}", Toast.LENGTH_SHORT)
+                    .show()
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -86,23 +104,41 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun takePhoto() {
-        val imageCapture = imageCapture ?: return
+        val photoFile = File(
+            externalCacheDir,  // <— temporary cache
+            "${System.currentTimeMillis()}.jpg"
+        )
 
-        val photoFile = File(externalCacheDir, "${System.currentTimeMillis()}.jpg")
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
 
-        imageCapture.takePicture(
+        imageCapture?.takePicture(
             outputOptions,
             ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageSavedCallback {
-                override fun onError(exc: ImageCaptureException) {
-                    Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
+                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                    val savedUri = Uri.fromFile(photoFile)
+
+                    // Destination file in cache for cropped image
+                    val destinationFile = File(
+                        externalCacheDir,
+                        "CROP_${System.currentTimeMillis()}.jpg"
+                    )
+                    val destinationUri = Uri.fromFile(destinationFile)
+
+                    val cropIntent = UCrop.of(savedUri, destinationUri)
+                        .withAspectRatio(1f, 1f) // optional, or make it configurable
+                        .withMaxResultSize(1080, 1080)
+                        .getIntent(this@CameraActivity)
+
+                    cropImageLauncher.launch(cropIntent)
                 }
 
-                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    val uri = Uri.fromFile(photoFile)
-                    capturedImages.add(uri)
-                    Toast.makeText(baseContext, "Photo added", Toast.LENGTH_SHORT).show()
+                override fun onError(exception: ImageCaptureException) {
+                    Toast.makeText(
+                        this@CameraActivity,
+                        "Capture failed: ${exception.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         )
