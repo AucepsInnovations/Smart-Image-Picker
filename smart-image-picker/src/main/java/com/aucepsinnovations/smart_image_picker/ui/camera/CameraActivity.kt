@@ -3,6 +3,8 @@ package com.aucepsinnovations.smart_image_picker.ui.camera
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.widget.Toast
@@ -34,6 +36,18 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
     private var pickerConfig: PickerConfig? = null
     private var lensFacing: Int = CameraSelector.LENS_FACING_BACK
     private var cameraProvider: ProcessCameraProvider? = null
+
+    private val TIMEOUT_IN_MS = 2 * 60 * 1000L // 2 minutes
+    private val WARNING_TIME_MS = 10 * 1000L // warn 10 seconds before closing
+    private val handler = Handler(Looper.getMainLooper())
+
+    private val timeoutRunnable = Runnable {
+        finish()
+    }
+
+    private val warningRunnable = Runnable {
+        Toast.makeText(this, getString(R.string.info_timeout_camera), Toast.LENGTH_LONG).show()
+    }
 
     private val cropImageLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -189,6 +203,12 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
         }
     }
 
+    private fun resetTimeout() {
+        handler.removeCallbacks(timeoutRunnable)
+        handler.postDelayed(warningRunnable, TIMEOUT_IN_MS - WARNING_TIME_MS)
+        handler.postDelayed(timeoutRunnable, TIMEOUT_IN_MS)
+    }
+
     override fun onClick(view: View) {
         when (view.id) {
             R.id.ibtn_gallery -> {
@@ -202,6 +222,22 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
             R.id.ibtn_capture -> takePhoto()
             R.id.ibtn_switch_camera -> switchCamera()
         }
+    }
+
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        resetTimeout()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        resetTimeout()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        handler.removeCallbacks(timeoutRunnable)
+        handler.removeCallbacks(warningRunnable)
     }
 
     override fun onDestroy() {
