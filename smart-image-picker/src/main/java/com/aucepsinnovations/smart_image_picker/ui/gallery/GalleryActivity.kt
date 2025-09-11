@@ -1,6 +1,7 @@
 package com.aucepsinnovations.smart_image_picker.ui.gallery
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.text.Html
 import android.view.Menu
@@ -25,7 +26,8 @@ import com.aucepsinnovations.smart_image_picker.core.util.visible
 import com.aucepsinnovations.smart_image_picker.databinding.ActivityGalleryBinding
 import com.aucepsinnovations.smart_image_picker.ui.camera.CameraActivity
 
-class GalleryActivity : AppCompatActivity(), View.OnClickListener {
+class GalleryActivity : AppCompatActivity(), View.OnClickListener,
+    GalleryAdapter.OnItemClickListener {
 
     private lateinit var binding: ActivityGalleryBinding
     private var pickerConfig: PickerConfig? = null
@@ -81,7 +83,7 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun initRecycler() {
         with(binding) {
-            galleryAdapter = GalleryAdapter(mutableListOf()).apply {
+            galleryAdapter = GalleryAdapter(mutableListOf(), this@GalleryActivity).apply {
                 this.onListChanged = { updatedList ->
                     viewModel.setImages(updatedList.toMutableList())
                 }
@@ -182,5 +184,9 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener {
         }
 
         return super.onOptionsItemSelected(item)
+    }
+
+    override fun onDeleteButtonClickListener(image: Uri) {
+        viewModel.removeImage(image)
     }
 }

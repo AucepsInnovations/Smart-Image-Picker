@@ -4,11 +4,14 @@ import android.net.Uri
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.aucepsinnovations.smart_image_picker.core.util.makeInvisible
+import com.aucepsinnovations.smart_image_picker.core.util.visible
 import com.aucepsinnovations.smart_image_picker.databinding.ItemGalleryBinding
 import java.util.Collections
 
 class GalleryAdapter(
-    private val imageList: MutableList<Uri>
+    private val imageList: MutableList<Uri>,
+    private val onItemClickListener: OnItemClickListener
 ) : RecyclerView.Adapter<GalleryAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(
@@ -37,7 +40,17 @@ class GalleryAdapter(
         RecyclerView.ViewHolder(binding.root) {
         fun onBind(position: Int) {
             val image = imageList[position]
+
             binding.ivImage.setImageURI(image)
+
+            if (imageList.size > 1)
+                binding.ibtnReorder.visible()
+            else
+                binding.ibtnReorder.makeInvisible()
+
+            binding.ibtnDelete.setOnClickListener {
+                onItemClickListener.onDeleteButtonClickListener(image)
+            }
         }
     }
 
@@ -62,4 +75,8 @@ class GalleryAdapter(
     }
 
     var onListChanged: ((List<Uri>) -> Unit)? = null
+
+    interface OnItemClickListener {
+        fun onDeleteButtonClickListener(image: Uri)
+    }
 }
