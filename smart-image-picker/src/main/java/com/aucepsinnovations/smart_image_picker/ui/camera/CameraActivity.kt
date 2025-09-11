@@ -59,7 +59,6 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
                 val resultUri = result.data?.let { UCrop.getOutput(it) }
                 resultUri?.let { uri ->
                     onImageCaptured(uri)
-                    Toast.makeText(this, "Photo cropped & ready", Toast.LENGTH_SHORT).show()
                 }
             } else if (result.resultCode == UCrop.RESULT_ERROR) {
                 val cropError = UCrop.getError(result.data!!)
@@ -126,7 +125,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
             .also { it.surfaceProvider = binding.viewFinder.surfaceProvider }
 
         lensFacing = CameraPreferences.getCameraMode(this)
-        
+
         updateCameraIcon()
 
         flashMode = CameraPreferences.getFlashMode(this)

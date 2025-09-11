@@ -7,6 +7,7 @@ import android.text.Html
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -25,6 +26,8 @@ import com.aucepsinnovations.smart_image_picker.core.util.makeInvisible
 import com.aucepsinnovations.smart_image_picker.core.util.visible
 import com.aucepsinnovations.smart_image_picker.databinding.ActivityGalleryBinding
 import com.aucepsinnovations.smart_image_picker.ui.camera.CameraActivity
+import com.yalantis.ucrop.UCrop
+import java.io.File
 
 class GalleryActivity : AppCompatActivity(), View.OnClickListener,
     GalleryAdapter.OnItemClickListener {
@@ -33,6 +36,28 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
     private var pickerConfig: PickerConfig? = null
     private lateinit var galleryAdapter: GalleryAdapter
     private val viewModel: GalleryViewModel by viewModels()
+
+    private val galleryLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            startCrop(it)
+        }
+    }
+
+    private val cropImageLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val resultUri = result.data?.let { UCrop.getOutput(it) }
+                resultUri?.let { uri ->
+                    viewModel.addImage(uri)
+                }
+            } else if (result.resultCode == UCrop.RESULT_ERROR) {
+                val cropError = UCrop.getError(result.data!!)
+                Toast.makeText(this, "Crop failed: ${cropError?.message}", Toast.LENGTH_SHORT)
+                    .show()
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -161,13 +186,42 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
         itemTouchHelper.attachToRecyclerView(recyclerView)
     }
 
+    fun openGallery() {
+        galleryLauncher.launch("image/*")
+    }
+
+    private fun startCrop(sourceUri: Uri) {
+        val destinationFile = File(
+            externalCacheDir,
+            "CROP_${System.currentTimeMillis()}.jpg"
+        )
+        val destinationUri = Uri.fromFile(destinationFile)
+
+        val cropIntent = UCrop.of(sourceUri, destinationUri)
+            .withAspectRatio(1f, 1f)
+            .withMaxResultSize(1080, 1080)
+            .getIntent(this@GalleryActivity)
+
+        cropImageLauncher.launch(cropIntent)
+    }
+
+    fun clearTempFiles() {
+        externalCacheDir?.listFiles()?.forEach { file ->
+            if (file.name.startsWith("CROP_")) {
+                file.delete()
+            }
+        }
+    }
+
     override fun onClick(view: View?) {
         when (view?.id) {
             R.id.btn_open_camera -> {
                 openCamera()
             }
 
-            R.id.btn_open_gallery -> {}
+            R.id.btn_open_gallery -> {
+                openGallery()
+            }
         }
     }
 
@@ -188,5 +242,10 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
 
     override fun onDeleteButtonClickListener(image: Uri) {
         viewModel.removeImage(image)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        clearTempFiles()
     }
 }
