@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView
 import au.com.elegantmedia.chat.util.recycler_view_item_decoration.GridSpaceItemDecoration
 import com.aucepsinnovations.smart_image_picker.R
 import com.aucepsinnovations.smart_image_picker.core.api.PickerConfig
+import com.aucepsinnovations.smart_image_picker.core.data.Cropper
 import com.aucepsinnovations.smart_image_picker.core.util.Constants
 import com.aucepsinnovations.smart_image_picker.core.util.dpToPx
 import com.aucepsinnovations.smart_image_picker.core.util.makeInvisible
@@ -27,7 +28,6 @@ import com.aucepsinnovations.smart_image_picker.core.util.visible
 import com.aucepsinnovations.smart_image_picker.databinding.ActivityGalleryBinding
 import com.aucepsinnovations.smart_image_picker.ui.camera.CameraActivity
 import com.yalantis.ucrop.UCrop
-import java.io.File
 
 class GalleryActivity : AppCompatActivity(), View.OnClickListener,
     GalleryAdapter.OnItemClickListener {
@@ -41,7 +41,7 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            startCrop(it)
+            Cropper.startCrop(this, uri, cropImageLauncher)
         }
     }
 
@@ -147,7 +147,7 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
                 val uriString = result.data?.getStringExtra(Constants.CROPPED_IMAGE_URI)
                 uriString?.let {
                     val croppedUri = it.toUri()
-                    viewModel.addImage(croppedUri) // ✅ Add to ViewModel so gallery updates
+                    viewModel.addImage(croppedUri)
                 }
             }
         }
@@ -190,29 +190,6 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
         galleryLauncher.launch("image/*")
     }
 
-    private fun startCrop(sourceUri: Uri) {
-        val destinationFile = File(
-            externalCacheDir,
-            "CROP_${System.currentTimeMillis()}.jpg"
-        )
-        val destinationUri = Uri.fromFile(destinationFile)
-
-        val cropIntent = UCrop.of(sourceUri, destinationUri)
-            .withAspectRatio(1f, 1f)
-            .withMaxResultSize(1080, 1080)
-            .getIntent(this@GalleryActivity)
-
-        cropImageLauncher.launch(cropIntent)
-    }
-
-    fun clearTempFiles() {
-        externalCacheDir?.listFiles()?.forEach { file ->
-            if (file.name.startsWith("CROP_")) {
-                file.delete()
-            }
-        }
-    }
-
     override fun onClick(view: View?) {
         when (view?.id) {
             R.id.btn_open_camera -> {
@@ -246,6 +223,6 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
 
     override fun onDestroy() {
         super.onDestroy()
-        clearTempFiles()
+        Cropper.clearSmartImagePickerCache(this)
     }
 }

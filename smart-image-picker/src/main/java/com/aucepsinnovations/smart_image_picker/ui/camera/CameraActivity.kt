@@ -23,6 +23,7 @@ import androidx.core.content.ContextCompat
 import com.aucepsinnovations.smart_image_picker.R
 import com.aucepsinnovations.smart_image_picker.core.api.PickerConfig
 import com.aucepsinnovations.smart_image_picker.core.data.CameraPreferences
+import com.aucepsinnovations.smart_image_picker.core.data.Cropper
 import com.aucepsinnovations.smart_image_picker.core.util.Constants
 import com.aucepsinnovations.smart_image_picker.databinding.ActivityCameraBinding
 import com.yalantis.ucrop.UCrop
@@ -181,18 +182,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     val savedUri = Uri.fromFile(photoFile)
 
-                    val destinationFile = File(
-                        externalCacheDir,
-                        "CROP_${System.currentTimeMillis()}.jpg"
-                    )
-                    val destinationUri = Uri.fromFile(destinationFile)
-
-                    val cropIntent = UCrop.of(savedUri, destinationUri)
-                        .withAspectRatio(1f, 1f)
-                        .withMaxResultSize(1080, 1080)
-                        .getIntent(this@CameraActivity)
-
-                    cropImageLauncher.launch(cropIntent)
+                    Cropper.startCrop(this@CameraActivity, savedUri, cropImageLauncher)
                 }
 
                 override fun onError(exception: ImageCaptureException) {
@@ -327,6 +317,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
     override fun onDestroy() {
         super.onDestroy()
         cameraExecutor.shutdown()
+        Cropper.clearSmartImagePickerCache(this)
     }
 
     companion object {
