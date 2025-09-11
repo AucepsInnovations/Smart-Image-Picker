@@ -1,18 +1,21 @@
 package com.aucepsinnovations.smart_image_picker.ui.camera
 
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -36,16 +39,16 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
     private var pickerConfig: PickerConfig? = null
     private var lensFacing: Int = CameraSelector.LENS_FACING_BACK
     private var cameraProvider: ProcessCameraProvider? = null
+    private var imageAnalysis: ImageAnalysis? = null
+    private var boundCamera: Camera? = null
 
     private val TIMEOUT_IN_MS = 2 * 60 * 1000L // 2 minutes
     private val WARNING_TIME_MS = 10 * 1000L // warn 10 seconds before closing
     private val handler = Handler(Looper.getMainLooper())
     private var flashMode = ImageCapture.FLASH_MODE_OFF
+    private var latestLuminance: Double = 255.0
 
-    private val timeoutRunnable = Runnable {
-        finish()
-    }
-
+    private val timeoutRunnable = Runnable { finish() }
     private val warningRunnable = Runnable {
         Toast.makeText(this, getString(R.string.info_timeout_camera), Toast.LENGTH_LONG).show()
     }
@@ -53,8 +56,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
     private val cropImageLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
-                val data = result.data
-                val resultUri = data?.let { UCrop.getOutput(it) }
+                val resultUri = result.data?.let { UCrop.getOutput(it) }
                 resultUri?.let { uri ->
                     onImageCaptured(uri)
                     Toast.makeText(this, "Photo cropped & ready", Toast.LENGTH_SHORT).show()
@@ -72,11 +74,11 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
         setContentView(binding.root)
 
         pickerConfig = intent.getParcelableExtra(Constants.CONFIG)
+        cameraExecutor = Executors.newSingleThreadExecutor()
 
         initUI()
+        setupImageAnalysis()
         initCameraProvider()
-
-        cameraExecutor = Executors.newSingleThreadExecutor()
     }
 
     private fun initUI() = with(binding) {
@@ -93,8 +95,27 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
         cameraProviderFuture.addListener({
             cameraProvider = cameraProviderFuture.get()
-            bindCameraUseCases() // initial bind
+            bindCameraUseCases()
         }, ContextCompat.getMainExecutor(this))
+    }
+
+    private fun setupImageAnalysis() {
+        imageAnalysis = ImageAnalysis.Builder()
+            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+            .build()
+            .also { analysis ->
+                analysis.setAnalyzer(cameraExecutor) { image ->
+                    try {
+                        val buffer = image.planes[0].buffer
+                        val data = ByteArray(buffer.remaining())
+                        buffer.get(data)
+                        latestLuminance = data.map { it.toInt() and 0xFF }.average()
+                    } catch (_: Exception) {
+                    } finally {
+                        image.close()
+                    }
+                }
+            }
     }
 
     private fun bindCameraUseCases() {
@@ -104,12 +125,16 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
             .build()
             .also { it.surfaceProvider = binding.viewFinder.surfaceProvider }
 
-        flashMode = CameraPreferences.getFlashMode(this) // restore saved mode
+        flashMode = CameraPreferences.getFlashMode(this)
 
         imageCapture = ImageCapture.Builder()
             .setFlashMode(flashMode)
-            .setCaptureMode(CAPTURE_MODE_MINIMIZE_LATENCY)
+            .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
             .build()
+
+        if (imageAnalysis == null) {
+            setupImageAnalysis()
+        }
 
         val cameraSelector = CameraSelector.Builder()
             .requireLensFacing(lensFacing)
@@ -117,18 +142,33 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
 
         try {
             provider.unbindAll()
-            provider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
+            boundCamera = provider.bindToLifecycle(
+                this,
+                cameraSelector,
+                preview,
+                imageCapture,
+                imageAnalysis
+            )
+
+            updateFlashIcon()
         } catch (exc: Exception) {
             Log.e(TAG, "Use case binding failed", exc)
         }
     }
 
     private fun takePhoto() {
-        val photoFile = File(
-            externalCacheDir,  // <— temporary cache
-            "${System.currentTimeMillis()}.jpg"
-        )
+        val currentCameraInfo = boundCamera?.cameraInfo
+        val hasFlashUnit = currentCameraInfo?.hasFlashUnit() ?: false
 
+        if (lensFacing == CameraSelector.LENS_FACING_FRONT && !hasFlashUnit) {
+            if (flashMode == ImageCapture.FLASH_MODE_ON ||
+                (flashMode == ImageCapture.FLASH_MODE_AUTO && isDarkEnvironment())
+            ) {
+                showScreenFlash()
+            }
+        }
+
+        val photoFile = File(externalCacheDir, "${System.currentTimeMillis()}.jpg")
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
 
         imageCapture?.takePicture(
@@ -138,7 +178,6 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     val savedUri = Uri.fromFile(photoFile)
 
-                    // Destination file in cache for cropped image
                     val destinationFile = File(
                         externalCacheDir,
                         "CROP_${System.currentTimeMillis()}.jpg"
@@ -146,7 +185,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
                     val destinationUri = Uri.fromFile(destinationFile)
 
                     val cropIntent = UCrop.of(savedUri, destinationUri)
-                        .withAspectRatio(1f, 1f) // optional, or make it configurable
+                        .withAspectRatio(1f, 1f)
                         .withMaxResultSize(1080, 1080)
                         .getIntent(this@CameraActivity)
 
@@ -165,47 +204,18 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun switchCamera() {
-        with(binding) {
-            val newLensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
-                CameraSelector.LENS_FACING_FRONT
-            } else {
-                CameraSelector.LENS_FACING_BACK
-            }
+        lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
+            CameraSelector.LENS_FACING_FRONT
+        } else {
+            CameraSelector.LENS_FACING_BACK
+        }
 
-            val cameraProviderFuture = ProcessCameraProvider.getInstance(this@CameraActivity)
-            cameraProviderFuture.addListener({
-                val cameraProvider = cameraProviderFuture.get()
+        bindCameraUseCases()
 
-                try {
-                    // Try binding the new camera
-                    val cameraSelector = CameraSelector.Builder()
-                        .requireLensFacing(newLensFacing)
-                        .build()
-
-                    cameraProvider.unbindAll()
-                    cameraProvider.bindToLifecycle(
-                        this@CameraActivity,
-                        cameraSelector,
-                        preview,
-                        imageCapture
-                    )
-
-                    lensFacing = newLensFacing
-                    if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
-                        ibtnSwitchCamera.setImageResource(R.drawable.ic_mobile_camera_rear_48px)
-                    } else {
-                        ibtnSwitchCamera.setImageResource(R.drawable.ic_mobile_camera_front_48px)
-                    }
-                } catch (exc: Exception) {
-                    Toast.makeText(
-                        this@CameraActivity,
-                        "Unable to switch camera",
-                        Toast.LENGTH_SHORT
-                    ).show().also {
-                        exc.printStackTrace()
-                    }
-                }
-            }, ContextCompat.getMainExecutor(this@CameraActivity))
+        if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
+            binding.ibtnSwitchCamera.setImageResource(R.drawable.ic_mobile_camera_rear_48px)
+        } else {
+            binding.ibtnSwitchCamera.setImageResource(R.drawable.ic_mobile_camera_front_48px)
         }
     }
 
@@ -221,6 +231,36 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
         updateFlashIcon()
     }
 
+    private fun showScreenFlash() {
+        val flashView = View(this).apply {
+            setBackgroundColor(Color.WHITE)
+            alpha = 0.2f
+        }
+
+        addContentView(
+            flashView,
+            ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
+
+        flashView.animate()
+            .alpha(1f)
+            .setDuration(500)
+            .withEndAction {
+                flashView.animate()
+                    .alpha(0f)
+                    .setDuration(100)
+                    .withEndAction {
+                        (flashView.parent as? ViewGroup)?.removeView(flashView)
+                    }
+            }
+    }
+
+    private fun isDarkEnvironment(): Boolean {
+        return latestLuminance < 60
+    }
 
     private fun updateFlashIcon() {
         val iconRes = when (flashMode) {
@@ -233,6 +273,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun resetTimeout() {
         handler.removeCallbacks(timeoutRunnable)
+        handler.removeCallbacks(warningRunnable)
         handler.postDelayed(warningRunnable, TIMEOUT_IN_MS - WARNING_TIME_MS)
         handler.postDelayed(timeoutRunnable, TIMEOUT_IN_MS)
     }
@@ -241,21 +282,14 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
         val resultIntent = Intent().apply {
             putExtra(Constants.CROPPED_IMAGE_URI, croppedUri.toString())
         }
-        setResult(RESULT_OK, resultIntent).also {
-            finish()
-        }
+        setResult(RESULT_OK, resultIntent)
+        finish()
     }
 
     override fun onClick(view: View) {
         when (view.id) {
-            R.id.ibtn_flash_mode -> {
-                toggleFlashMode()
-            }
-
-            R.id.ibtn_gallery -> {
-                onBackPressedDispatcher.onBackPressed()
-            }
-
+            R.id.ibtn_flash_mode -> toggleFlashMode()
+            R.id.ibtn_gallery -> onBackPressedDispatcher.onBackPressed()
             R.id.ibtn_capture -> takePhoto()
             R.id.ibtn_switch_camera -> switchCamera()
         }
