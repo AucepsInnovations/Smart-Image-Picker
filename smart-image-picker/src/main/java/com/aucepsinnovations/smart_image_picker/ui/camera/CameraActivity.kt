@@ -12,12 +12,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import com.aucepsinnovations.smart_image_picker.R
 import com.aucepsinnovations.smart_image_picker.core.api.PickerConfig
+import com.aucepsinnovations.smart_image_picker.core.data.CameraPreferences
 import com.aucepsinnovations.smart_image_picker.core.util.Constants
 import com.aucepsinnovations.smart_image_picker.databinding.ActivityCameraBinding
 import com.yalantis.ucrop.UCrop
@@ -38,6 +40,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
     private val TIMEOUT_IN_MS = 2 * 60 * 1000L // 2 minutes
     private val WARNING_TIME_MS = 10 * 1000L // warn 10 seconds before closing
     private val handler = Handler(Looper.getMainLooper())
+    private var flashMode = ImageCapture.FLASH_MODE_OFF
 
     private val timeoutRunnable = Runnable {
         finish()
@@ -77,6 +80,10 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun initUI() = with(binding) {
+        flashMode = CameraPreferences.getFlashMode(this@CameraActivity)
+        updateFlashIcon()
+
+        ibtnFlashMode.setOnClickListener(this@CameraActivity)
         ibtnGallery.setOnClickListener(this@CameraActivity)
         ibtnCapture.setOnClickListener(this@CameraActivity)
         ibtnSwitchCamera.setOnClickListener(this@CameraActivity)
@@ -95,11 +102,14 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
 
         preview = Preview.Builder()
             .build()
-            .also {
-                it.surfaceProvider = binding.viewFinder.surfaceProvider
-            }
+            .also { it.surfaceProvider = binding.viewFinder.surfaceProvider }
 
-        imageCapture = ImageCapture.Builder().build()
+        flashMode = CameraPreferences.getFlashMode(this) // restore saved mode
+
+        imageCapture = ImageCapture.Builder()
+            .setFlashMode(flashMode)
+            .setCaptureMode(CAPTURE_MODE_MINIMIZE_LATENCY)
+            .build()
 
         val cameraSelector = CameraSelector.Builder()
             .requireLensFacing(lensFacing)
@@ -107,9 +117,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
 
         try {
             provider.unbindAll()
-            provider.bindToLifecycle(
-                this, cameraSelector, preview, imageCapture
-            )
+            provider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
         } catch (exc: Exception) {
             Log.e(TAG, "Use case binding failed", exc)
         }
@@ -201,6 +209,28 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
         }
     }
 
+    private fun toggleFlashMode() {
+        flashMode = when (flashMode) {
+            ImageCapture.FLASH_MODE_OFF -> ImageCapture.FLASH_MODE_ON
+            ImageCapture.FLASH_MODE_ON -> ImageCapture.FLASH_MODE_AUTO
+            else -> ImageCapture.FLASH_MODE_OFF
+        }
+
+        imageCapture?.flashMode = flashMode
+        CameraPreferences.saveFlashMode(this, flashMode)
+        updateFlashIcon()
+    }
+
+
+    private fun updateFlashIcon() {
+        val iconRes = when (flashMode) {
+            ImageCapture.FLASH_MODE_ON -> R.drawable.ic_flash_on_24px
+            ImageCapture.FLASH_MODE_AUTO -> R.drawable.ic_flash_auto_24px
+            else -> R.drawable.ic_flash_off_24px
+        }
+        binding.ibtnFlashMode.setImageResource(iconRes)
+    }
+
     private fun resetTimeout() {
         handler.removeCallbacks(timeoutRunnable)
         handler.postDelayed(warningRunnable, TIMEOUT_IN_MS - WARNING_TIME_MS)
@@ -218,6 +248,10 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
 
     override fun onClick(view: View) {
         when (view.id) {
+            R.id.ibtn_flash_mode -> {
+                toggleFlashMode()
+            }
+
             R.id.ibtn_gallery -> {
                 onBackPressedDispatcher.onBackPressed()
             }
