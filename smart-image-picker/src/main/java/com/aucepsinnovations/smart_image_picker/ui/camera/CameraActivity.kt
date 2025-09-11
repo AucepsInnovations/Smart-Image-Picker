@@ -125,6 +125,10 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
             .build()
             .also { it.surfaceProvider = binding.viewFinder.surfaceProvider }
 
+        lensFacing = CameraPreferences.getCameraMode(this)
+        
+        updateCameraIcon()
+
         flashMode = CameraPreferences.getFlashMode(this)
 
         imageCapture = ImageCapture.Builder()
@@ -210,8 +214,18 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
             CameraSelector.LENS_FACING_BACK
         }
 
-        bindCameraUseCases()
+        updateCameraIcon()
 
+        if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
+            CameraPreferences.saveCameraMode(this, CameraSelector.LENS_FACING_FRONT)
+        } else {
+            CameraPreferences.saveCameraMode(this, CameraSelector.LENS_FACING_BACK)
+        }
+
+        bindCameraUseCases()
+    }
+
+    private fun updateCameraIcon() {
         if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
             binding.ibtnSwitchCamera.setImageResource(R.drawable.ic_mobile_camera_rear_48px)
         } else {
