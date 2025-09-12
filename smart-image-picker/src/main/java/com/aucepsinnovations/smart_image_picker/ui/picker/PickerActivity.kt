@@ -13,12 +13,16 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import com.aucepsinnovations.smart_image_picker.R
 import com.aucepsinnovations.smart_image_picker.core.api.PickerConfig
+import com.aucepsinnovations.smart_image_picker.core.api.PickerResult
+import com.aucepsinnovations.smart_image_picker.core.data.Cropper
 import com.aucepsinnovations.smart_image_picker.core.data.SmartImagePicker
 import com.aucepsinnovations.smart_image_picker.core.util.Constants
 import com.aucepsinnovations.smart_image_picker.databinding.ActivityPickerBinding
 import com.aucepsinnovations.smart_image_picker.ui.camera.CameraActivity
+import com.yalantis.ucrop.UCrop
 
 class PickerActivity : AppCompatActivity(), View.OnClickListener {
 
@@ -60,6 +64,39 @@ class PickerActivity : AppCompatActivity(), View.OnClickListener {
                         Toast.LENGTH_SHORT
                     ).show()
                 }
+            }
+        }
+
+    private val cameraLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val uriString = result.data?.getStringExtra(Constants.CROPPED_IMAGE_URI)
+                uriString?.let {
+                    val croppedUri = it.toUri()
+                    returnResult(croppedUri)
+                }
+            }
+        }
+
+    private val galleryLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            Cropper.startCrop(this, uri, cropImageLauncher)
+        }
+    }
+
+    private val cropImageLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val resultUri = result.data?.let { UCrop.getOutput(it) }
+                resultUri?.let { uri ->
+                    returnResult(uri)
+                }
+            } else if (result.resultCode == UCrop.RESULT_ERROR) {
+                val cropError = UCrop.getError(result.data!!)
+                Toast.makeText(this, "Crop failed: ${cropError?.message}", Toast.LENGTH_SHORT)
+                    .show()
             }
         }
 
@@ -109,7 +146,20 @@ class PickerActivity : AppCompatActivity(), View.OnClickListener {
     private fun startCamera() {
         val intent = Intent(this@PickerActivity, CameraActivity::class.java)
         intent.putExtra(Constants.CONFIG, pickerConfig)
-        startActivity(intent)
+        cameraLauncher.launch(intent)
+    }
+
+    fun openGallery() {
+        galleryLauncher.launch("image/*")
+    }
+
+    private fun returnResult(uri: Uri) {
+        val result = PickerResult.Single(uri)
+        val intent = Intent().apply {
+            putExtra(Constants.RESULT, result)
+        }
+        setResult(RESULT_OK, intent)
+        finish()
     }
 
     override fun onClick(view: View?) {
@@ -124,7 +174,9 @@ class PickerActivity : AppCompatActivity(), View.OnClickListener {
                     }
                 }
 
-                clGallery -> {}
+                clGallery -> {
+                    openGallery()
+                }
             }
         }
     }

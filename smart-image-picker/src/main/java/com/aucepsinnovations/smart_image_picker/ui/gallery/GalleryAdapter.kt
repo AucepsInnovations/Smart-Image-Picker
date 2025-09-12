@@ -74,6 +74,10 @@ class GalleryAdapter(
         notifyDataSetChanged()
     }
 
+    fun getImageList(): List<Uri> {
+        return imageList
+    }
+
     var onListChanged: ((List<Uri>) -> Unit)? = null
 
     interface OnItemClickListener {

@@ -1,8 +1,12 @@
 package com.aucepsinnovations.smart_image_picker.ui.gallery
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.text.Html
 import android.view.Menu
 import android.view.MenuItem
@@ -11,6 +15,8 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -20,6 +26,7 @@ import androidx.recyclerview.widget.RecyclerView
 import au.com.elegantmedia.chat.util.recycler_view_item_decoration.GridSpaceItemDecoration
 import com.aucepsinnovations.smart_image_picker.R
 import com.aucepsinnovations.smart_image_picker.core.api.PickerConfig
+import com.aucepsinnovations.smart_image_picker.core.api.PickerResult
 import com.aucepsinnovations.smart_image_picker.core.data.Cropper
 import com.aucepsinnovations.smart_image_picker.core.data.SmartImagePicker
 import com.aucepsinnovations.smart_image_picker.core.util.Constants
@@ -37,6 +44,44 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
     private var pickerConfig: PickerConfig? = null
     private lateinit var galleryAdapter: GalleryAdapter
     private val viewModel: GalleryViewModel by viewModels()
+
+    private val activityResultLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { permissions ->
+            var permissionGranted = true
+            permissions.entries.forEach {
+                if (it.key in REQUIRED_PERMISSIONS && !it.value) {
+                    permissionGranted = false
+                }
+            }
+
+            if (permissionGranted) {
+                openCamera()
+            } else {
+                // Check if permanently denied
+                val permanentlyDenied = REQUIRED_PERMISSIONS.any { perm ->
+                    !ActivityCompat.shouldShowRequestPermissionRationale(this, perm)
+                }
+
+                if (permanentlyDenied) {
+                    // User checked "Don't ask again"
+                    Toast.makeText(
+                        this,
+                        getString(R.string.info_permission),
+                        Toast.LENGTH_LONG
+                    ).show()
+
+                    openAppSettings()
+                } else {
+                    Toast.makeText(
+                        this,
+                        getString(R.string.info_permission_denied),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
 
     private val galleryLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
@@ -155,6 +200,7 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
 
     private fun openCamera() {
         val intent = Intent(this, CameraActivity::class.java)
+        intent.putExtra(Constants.CONFIG, pickerConfig)
         cameraLauncher.launch(intent)
     }
 
@@ -191,10 +237,40 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
         galleryLauncher.launch("image/*")
     }
 
+    private fun requestPermissions() {
+        activityResultLauncher.launch(REQUIRED_PERMISSIONS)
+    }
+
+    private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
+        ContextCompat.checkSelfPermission(
+            baseContext, it
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun openAppSettings() {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.fromParts("package", packageName, null)
+        }
+        startActivity(intent)
+    }
+
+    private fun returnResult(uris: List<Uri>) {
+        val result = PickerResult.Multiple(uris)
+        val intent = Intent().apply {
+            putExtra(Constants.RESULT, result)
+        }
+        setResult(RESULT_OK, intent)
+        finish()
+    }
+
     override fun onClick(view: View?) {
         when (view?.id) {
             R.id.btn_open_camera -> {
-                openCamera()
+                if (allPermissionsGranted()) {
+                    openCamera()
+                } else {
+                    requestPermissions()
+                }
             }
 
             R.id.btn_open_gallery -> {
@@ -211,7 +287,8 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.action_done -> {
-
+                val uriList = galleryAdapter.getImageList()
+                returnResult(uriList)
             }
         }
 
@@ -225,5 +302,16 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
     override fun onDestroy() {
         super.onDestroy()
         SmartImagePicker.clearOldCache(this)
+    }
+
+    companion object {
+        private val REQUIRED_PERMISSIONS =
+            mutableListOf(
+                Manifest.permission.CAMERA
+            ).apply {
+                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                    add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                }
+            }.toTypedArray()
     }
 }

@@ -18,9 +18,21 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 
     private val pickImages = registerForActivityResult(SmartImagePickerContract()) { result ->
         when (result) {
-            is PickerResult.Success -> {}
-            is PickerResult.Canceled -> {}
-            is PickerResult.Error -> {}
+            is PickerResult.Single -> {
+                println(result.uri)
+            }
+
+            is PickerResult.Multiple -> {
+                println(result.uris)
+            }
+
+            is PickerResult.Canceled -> {
+                println("Canceled")
+            }
+
+            is PickerResult.Error -> {
+                println(result.message)
+            }
         }
     }
 
@@ -41,14 +53,59 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun initUI() {
         with(binding) {
-            btnPicker.setOnClickListener(this@MainActivity)
+            btnExactOne.setOnClickListener(this@MainActivity)
+            btnExact.setOnClickListener(this@MainActivity)
+            btnMax.setOnClickListener(this@MainActivity)
+            btnMin.setOnClickListener(this@MainActivity)
+            btnRange.setOnClickListener(this@MainActivity)
+            btnUnlimited.setOnClickListener(this@MainActivity)
         }
     }
 
     override fun onClick(view: View?) {
         with(binding) {
             when (view) {
-                btnPicker -> {
+                btnExactOne -> {
+                    pickImages.launch(
+                        PickerConfig(
+                            countMode = CountMode.EXACT_ONE
+                        )
+                    )
+                }
+
+                btnExact -> {
+                    pickImages.launch(
+                        PickerConfig(
+                            countMode = CountMode.EXACT(5)
+                        )
+                    )
+                }
+
+                btnMax -> {
+                    pickImages.launch(
+                        PickerConfig(
+                            countMode = CountMode.MAX(5)
+                        )
+                    )
+                }
+
+                btnMin -> {
+                    pickImages.launch(
+                        PickerConfig(
+                            countMode = CountMode.MIN(2)
+                        )
+                    )
+                }
+
+                btnRange -> {
+                    pickImages.launch(
+                        PickerConfig(
+                            countMode = CountMode.RANGE(2, 5)
+                        )
+                    )
+                }
+
+                btnUnlimited -> {
                     pickImages.launch(
                         PickerConfig(
                             countMode = CountMode.UNLIMITED
