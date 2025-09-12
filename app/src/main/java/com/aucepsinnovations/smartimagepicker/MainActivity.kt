@@ -1,7 +1,9 @@
 package com.aucepsinnovations.smartimagepicker
 
 import android.os.Bundle
+import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -10,6 +12,7 @@ import com.aucepsinnovations.smart_image_picker.core.api.CountMode
 import com.aucepsinnovations.smart_image_picker.core.api.PickerConfig
 import com.aucepsinnovations.smart_image_picker.core.api.PickerResult
 import com.aucepsinnovations.smart_image_picker.core.contract.SmartImagePickerContract
+import com.aucepsinnovations.smart_image_picker.core.data.SmartImagePicker
 import com.aucepsinnovations.smartimagepicker.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
@@ -20,18 +23,21 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         when (result) {
             is PickerResult.Single -> {
                 println(result.uri)
+                SmartImagePicker.uriToFile(this, result.uri, 1024)
             }
 
             is PickerResult.Multiple -> {
                 println(result.uris)
+                SmartImagePicker.urisToFiles(this, result.uris, 1024)
             }
 
             is PickerResult.Canceled -> {
-                println("Canceled")
+                Toast.makeText(this, "Canceled", Toast.LENGTH_SHORT)
             }
 
             is PickerResult.Error -> {
                 println(result.message)
+                Log.ERROR
             }
         }
     }
