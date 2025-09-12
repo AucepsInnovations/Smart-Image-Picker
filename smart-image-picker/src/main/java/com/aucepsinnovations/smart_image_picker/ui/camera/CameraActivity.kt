@@ -24,6 +24,7 @@ import com.aucepsinnovations.smart_image_picker.R
 import com.aucepsinnovations.smart_image_picker.core.api.PickerConfig
 import com.aucepsinnovations.smart_image_picker.core.data.CameraPreferences
 import com.aucepsinnovations.smart_image_picker.core.data.Cropper
+import com.aucepsinnovations.smart_image_picker.core.data.SmartImagePicker
 import com.aucepsinnovations.smart_image_picker.core.util.Constants
 import com.aucepsinnovations.smart_image_picker.databinding.ActivityCameraBinding
 import com.yalantis.ucrop.UCrop
@@ -317,7 +318,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
     override fun onDestroy() {
         super.onDestroy()
         cameraExecutor.shutdown()
-        Cropper.clearSmartImagePickerCache(this)
+        SmartImagePicker.clearOldCache(this)
     }
 
     companion object {

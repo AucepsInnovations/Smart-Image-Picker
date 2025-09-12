@@ -39,11 +39,4 @@ object Cropper {
         }
         return File(cacheDir, fileName)
     }
-
-    fun clearSmartImagePickerCache(activity: Activity) {
-        val cacheDir = File(activity.externalCacheDir, "SmartImagePicker")
-        if (cacheDir.exists()) {
-            cacheDir.deleteRecursively()
-        }
-    }
 }

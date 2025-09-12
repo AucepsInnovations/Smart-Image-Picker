@@ -15,6 +15,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.aucepsinnovations.smart_image_picker.R
 import com.aucepsinnovations.smart_image_picker.core.api.PickerConfig
+import com.aucepsinnovations.smart_image_picker.core.data.SmartImagePicker
 import com.aucepsinnovations.smart_image_picker.core.util.Constants
 import com.aucepsinnovations.smart_image_picker.databinding.ActivityPickerBinding
 import com.aucepsinnovations.smart_image_picker.ui.camera.CameraActivity
@@ -126,6 +127,11 @@ class PickerActivity : AppCompatActivity(), View.OnClickListener {
                 clGallery -> {}
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        SmartImagePicker.clearOldCache(this)
     }
 
     companion object {
