@@ -8,6 +8,8 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -335,6 +337,16 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_gallery, menu)
         menuItem = menu.findItem(R.id.action_done)
+
+        val s = SpannableString(menuItem.title)
+        s.setSpan(
+            ForegroundColorSpan(pickerConfig!!.titleColor),
+            0,
+            s.length,
+            0
+        )
+        menuItem.title = s
+
         buttonValidator()
         return true
     }

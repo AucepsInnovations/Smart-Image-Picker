@@ -1,10 +1,9 @@
 package com.aucepsinnovations.smart_image_picker.core.util
 
-import android.content.Context
+import android.graphics.Color
 import android.os.Build
 import android.view.Window
 import android.view.WindowInsets
-import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 
 @Suppress("DEPRECATION")
@@ -28,15 +27,13 @@ fun setupSystemBars(window: Window, color: Int) {
 
     // Set icons to white
     val controller = WindowCompat.getInsetsController(window, window.decorView)
-    controller.isAppearanceLightStatusBars = false
-    controller.isAppearanceLightNavigationBars = false
+    controller.isAppearanceLightStatusBars = !isColorDark(color)
+    controller.isAppearanceLightNavigationBars = !isColorDark(color)
 }
 
-fun Context.colorToHex(colorResId: Int, includeAlpha: Boolean = false): String {
-    val colorInt = ContextCompat.getColor(this, colorResId)
-    return if (includeAlpha) {
-        String.format("#%08X", colorInt) // ARGB
-    } else {
-        String.format("#%06X", 0xFFFFFF and colorInt) // RGB
-    }
+fun isColorDark(color: Int): Boolean {
+    val darkness = 1 - (0.299 * Color.red(color) +
+            0.587 * Color.green(color) +
+            0.114 * Color.blue(color)) / 255
+    return darkness >= 0.5
 }

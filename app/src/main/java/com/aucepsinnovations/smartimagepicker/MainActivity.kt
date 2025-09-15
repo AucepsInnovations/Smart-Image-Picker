@@ -76,10 +76,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     pickImages.launch(
                         PickerConfig(
                             countMode = CountMode.EXACT_ONE,
-                            accentColor = Color.CYAN,
+                            accentColor = Color.WHITE,
                             backgroundColor = Color.DKGRAY,
-                            buttonColor = Color.RED,
-                            textColor = Color.GREEN,
+                            buttonColor = Color.WHITE,
+                            titleColor = Color.BLACK,
+                            textColor = Color.BLACK
                         )
                     )
                 }
@@ -88,10 +89,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     pickImages.launch(
                         PickerConfig(
                             countMode = CountMode.EXACT(5),
-                            accentColor = Color.CYAN,
+                            accentColor = Color.WHITE,
                             backgroundColor = Color.DKGRAY,
-                            buttonColor = Color.RED,
-                            textColor = Color.GREEN,
+                            buttonColor = Color.WHITE,
+                            titleColor = Color.BLACK,
+                            textColor = Color.BLACK
                         )
                     )
                 }
@@ -99,7 +101,12 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 btnMax -> {
                     pickImages.launch(
                         PickerConfig(
-                            countMode = CountMode.MAX(5)
+                            countMode = CountMode.MAX(5),
+                            accentColor = Color.WHITE,
+                            backgroundColor = Color.DKGRAY,
+                            buttonColor = Color.WHITE,
+                            titleColor = Color.BLACK,
+                            textColor = Color.BLACK
                         )
                     )
                 }
@@ -107,7 +114,12 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 btnMin -> {
                     pickImages.launch(
                         PickerConfig(
-                            countMode = CountMode.MIN(2)
+                            countMode = CountMode.MIN(2),
+                            accentColor = Color.WHITE,
+                            backgroundColor = Color.DKGRAY,
+                            buttonColor = Color.WHITE,
+                            titleColor = Color.BLACK,
+                            textColor = Color.BLACK
                         )
                     )
                 }
@@ -115,7 +127,12 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 btnRange -> {
                     pickImages.launch(
                         PickerConfig(
-                            countMode = CountMode.RANGE(2, 5)
+                            countMode = CountMode.RANGE(2, 5),
+                            accentColor = Color.WHITE,
+                            backgroundColor = Color.DKGRAY,
+                            buttonColor = Color.WHITE,
+                            titleColor = Color.BLACK,
+                            textColor = Color.BLACK
                         )
                     )
                 }
@@ -123,7 +140,12 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 btnUnlimited -> {
                     pickImages.launch(
                         PickerConfig(
-                            countMode = CountMode.UNLIMITED
+                            countMode = CountMode.UNLIMITED,
+                            accentColor = Color.WHITE,
+                            backgroundColor = Color.DKGRAY,
+                            buttonColor = Color.WHITE,
+                            titleColor = Color.BLACK,
+                            textColor = Color.BLACK
                         )
                     )
                 }
