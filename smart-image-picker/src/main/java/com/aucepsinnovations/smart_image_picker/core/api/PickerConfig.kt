@@ -12,5 +12,6 @@ data class PickerConfig(
     val compressMaxBytes: Long = 3_000_000, // ~3MB target (0 = no compression)
     val backgroundColor: Int = 0xFF000000.toInt(), // Default black
     val accentColor: Int = 0xFFFFFFFF.toInt(), // Default white
-    val textColor: Int = 0xFF000000.toInt() // Default white
+    val textColor: Int = 0xFF000000.toInt(), // Default white
+    val buttonColor: Int = 0xFF000000.toInt() // Default white
 ) : Parcelable

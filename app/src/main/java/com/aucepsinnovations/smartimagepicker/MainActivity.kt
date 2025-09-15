@@ -1,5 +1,6 @@
 package com.aucepsinnovations.smartimagepicker
 
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -74,7 +75,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 btnExactOne -> {
                     pickImages.launch(
                         PickerConfig(
-                            countMode = CountMode.EXACT_ONE
+                            countMode = CountMode.EXACT_ONE,
+                            accentColor = Color.CYAN,
+                            backgroundColor = Color.DKGRAY,
+                            buttonColor = Color.RED,
+                            textColor = Color.GREEN,
                         )
                     )
                 }
@@ -82,7 +87,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 btnExact -> {
                     pickImages.launch(
                         PickerConfig(
-                            countMode = CountMode.EXACT(5)
+                            countMode = CountMode.EXACT(5),
+                            accentColor = Color.CYAN,
+                            backgroundColor = Color.DKGRAY,
+                            buttonColor = Color.RED,
+                            textColor = Color.GREEN,
                         )
                     )
                 }

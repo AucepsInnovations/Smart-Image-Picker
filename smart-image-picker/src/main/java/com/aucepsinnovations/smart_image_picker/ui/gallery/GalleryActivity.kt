@@ -3,11 +3,11 @@ package com.aucepsinnovations.smart_image_picker.ui.gallery
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.text.Html
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -18,8 +18,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -35,6 +33,7 @@ import com.aucepsinnovations.smart_image_picker.core.util.disable
 import com.aucepsinnovations.smart_image_picker.core.util.dpToPx
 import com.aucepsinnovations.smart_image_picker.core.util.enable
 import com.aucepsinnovations.smart_image_picker.core.util.makeInvisible
+import com.aucepsinnovations.smart_image_picker.core.util.setupSystemBars
 import com.aucepsinnovations.smart_image_picker.core.util.visible
 import com.aucepsinnovations.smart_image_picker.databinding.ActivityGalleryBinding
 import com.aucepsinnovations.smart_image_picker.ui.camera.CameraActivity
@@ -129,14 +128,9 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
         binding = ActivityGalleryBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.cl_main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
-
         pickerConfig = intent.getParcelableExtra(Constants.CONFIG)
 
+        pickerConfig?.let { setupSystemBars(window, it.accentColor) }
         initUI()
         initActionBar()
         initRecycler()
@@ -149,6 +143,14 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
 
     private fun initUI() {
         with(binding) {
+            pickerConfig?.let {
+                toolbar.setBackgroundColor(it.accentColor)
+                clMain.setBackgroundColor(it.backgroundColor)
+                (btnOpenCamera.background as? GradientDrawable)?.setColor(it.buttonColor)
+                (btnOpenGallery.background as? GradientDrawable)?.setColor(it.buttonColor)
+                btnOpenCamera.setTextColor(it.textColor)
+                btnOpenGallery.setTextColor(it.textColor)
+            }
             btnOpenCamera.setOnClickListener(this@GalleryActivity)
             btnOpenGallery.setOnClickListener(this@GalleryActivity)
 
@@ -161,13 +163,16 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
     private fun initActionBar() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.apply {
-            title = Html.fromHtml("<font color='#ffffff'>Choose or Capture Image</font>");
+            title = "Choose or Capture Image"
+            setDisplayHomeAsUpEnabled(true)
         }
 
         binding.toolbar.apply {
             setNavigationOnClickListener {
                 onBackPressedDispatcher.onBackPressed()
             }
+            setTitleTextColor(pickerConfig!!.textColor)
+            navigationIcon?.setTint(pickerConfig!!.textColor)
         }
     }
 
