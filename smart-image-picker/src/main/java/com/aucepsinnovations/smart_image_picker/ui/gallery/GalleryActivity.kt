@@ -25,12 +25,15 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import au.com.elegantmedia.chat.util.recycler_view_item_decoration.GridSpaceItemDecoration
 import com.aucepsinnovations.smart_image_picker.R
+import com.aucepsinnovations.smart_image_picker.core.api.CountMode
 import com.aucepsinnovations.smart_image_picker.core.api.PickerConfig
 import com.aucepsinnovations.smart_image_picker.core.api.PickerResult
 import com.aucepsinnovations.smart_image_picker.core.data.Cropper
 import com.aucepsinnovations.smart_image_picker.core.data.SmartImagePicker
 import com.aucepsinnovations.smart_image_picker.core.util.Constants
+import com.aucepsinnovations.smart_image_picker.core.util.disable
 import com.aucepsinnovations.smart_image_picker.core.util.dpToPx
+import com.aucepsinnovations.smart_image_picker.core.util.enable
 import com.aucepsinnovations.smart_image_picker.core.util.makeInvisible
 import com.aucepsinnovations.smart_image_picker.core.util.visible
 import com.aucepsinnovations.smart_image_picker.databinding.ActivityGalleryBinding
@@ -44,6 +47,9 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
     private var pickerConfig: PickerConfig? = null
     private lateinit var galleryAdapter: GalleryAdapter
     private val viewModel: GalleryViewModel by viewModels()
+    private var canContinue = false
+    private var canAddPhoto = true
+    private lateinit var menuItem: MenuItem
 
     private val activityResultLauncher =
         registerForActivityResult(
@@ -83,6 +89,18 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
             }
         }
 
+    private val cameraLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val uriString = result.data?.getStringExtra(Constants.CROPPED_IMAGE_URI)
+                uriString?.let {
+                    val croppedUri = it.toUri()
+                    viewModel.addImage(croppedUri)
+                    buttonValidator()
+                }
+            }
+        }
+
     private val galleryLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -97,6 +115,7 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
                 val resultUri = result.data?.let { UCrop.getOutput(it) }
                 resultUri?.let { uri ->
                     viewModel.addImage(uri)
+                    buttonValidator()
                 }
             } else if (result.resultCode == UCrop.RESULT_ERROR) {
                 val cropError = UCrop.getError(result.data!!)
@@ -175,6 +194,46 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
         }
     }
 
+    private fun buttonValidator() {
+        with(binding) {
+            pickerConfig?.let { pickerConfig ->
+                val countMode = pickerConfig.countMode
+                try {
+                    canContinue = when (countMode) {
+                        is CountMode.EXACT -> galleryAdapter.itemCount == countMode.n
+                        CountMode.EXACT_ONE -> galleryAdapter.itemCount == 1
+                        is CountMode.MAX -> galleryAdapter.itemCount in 1..countMode.n
+                        is CountMode.MIN -> galleryAdapter.itemCount >= countMode.n
+                        is CountMode.RANGE -> galleryAdapter.itemCount in countMode.min..countMode.max
+                        CountMode.UNLIMITED -> galleryAdapter.itemCount > 0
+                    }
+
+                    canAddPhoto = when (countMode) {
+                        is CountMode.EXACT -> galleryAdapter.itemCount < countMode.n
+                        CountMode.EXACT_ONE -> galleryAdapter.itemCount < 1
+                        is CountMode.MAX -> galleryAdapter.itemCount < countMode.n
+                        is CountMode.MIN -> true
+                        is CountMode.RANGE -> galleryAdapter.itemCount < countMode.max
+                        CountMode.UNLIMITED -> true
+                    }
+                } catch (e: Exception) {
+                    false.also {
+                        e.printStackTrace()
+                    }
+                }
+            }
+
+            menuItem.isVisible = canContinue
+            if (canAddPhoto) {
+                btnOpenCamera.enable()
+                btnOpenGallery.enable()
+            } else {
+                btnOpenCamera.disable()
+                btnOpenGallery.disable()
+            }
+        }
+    }
+
     private fun handleVisibility() {
         with(binding) {
             if (galleryAdapter.itemCount == 0) {
@@ -186,17 +245,6 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
             }
         }
     }
-
-    private val cameraLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) {
-                val uriString = result.data?.getStringExtra(Constants.CROPPED_IMAGE_URI)
-                uriString?.let {
-                    val croppedUri = it.toUri()
-                    viewModel.addImage(croppedUri)
-                }
-            }
-        }
 
     private fun openCamera() {
         val intent = Intent(this, CameraActivity::class.java)
@@ -281,6 +329,8 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_gallery, menu)
+        menuItem = menu.findItem(R.id.action_done)
+        buttonValidator()
         return true
     }
 
@@ -297,6 +347,7 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
 
     override fun onDeleteButtonClickListener(image: Uri) {
         viewModel.removeImage(image)
+        buttonValidator()
     }
 
     override fun onDestroy() {
