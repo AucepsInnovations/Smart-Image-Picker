@@ -1,5 +1,7 @@
 package com.aucepsinnovations.smart_image_picker.core.util
 
+import android.app.AlertDialog
+import android.content.Context
 import android.graphics.Color
 import android.os.Build
 import android.view.Window
@@ -36,4 +38,32 @@ fun isColorDark(color: Int): Boolean {
             0.587 * Color.green(color) +
             0.114 * Color.blue(color)) / 255
     return darkness >= 0.5
+}
+
+fun Context.showAlert(
+    title: String,
+    message: String,
+    positiveText: String = "OK",
+    negativeText: String? = null,
+    onPositive: (() -> Unit)? = null,
+    onNegative: (() -> Unit)? = null
+) {
+    val builder = AlertDialog.Builder(this)
+        .setTitle(title)
+        .setMessage(message)
+        .setCancelable(false)
+        .setPositiveButton(positiveText) { dialog, _ ->
+            onPositive?.invoke()
+            dialog.dismiss()
+        }
+
+    // Only add negative button if provided
+    negativeText?.let {
+        builder.setNegativeButton(it) { dialog, _ ->
+            onNegative?.invoke()
+            dialog.dismiss()
+        }
+    }
+
+    builder.show()
 }

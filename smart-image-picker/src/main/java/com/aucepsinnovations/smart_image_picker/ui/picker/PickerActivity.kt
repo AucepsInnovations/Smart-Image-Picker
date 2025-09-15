@@ -21,6 +21,9 @@ import com.aucepsinnovations.smart_image_picker.core.api.PickerResult
 import com.aucepsinnovations.smart_image_picker.core.data.Cropper
 import com.aucepsinnovations.smart_image_picker.core.data.SmartImagePicker
 import com.aucepsinnovations.smart_image_picker.core.util.Constants
+import com.aucepsinnovations.smart_image_picker.core.util.gone
+import com.aucepsinnovations.smart_image_picker.core.util.showAlert
+import com.aucepsinnovations.smart_image_picker.core.util.visible
 import com.aucepsinnovations.smart_image_picker.databinding.ActivityPickerBinding
 import com.aucepsinnovations.smart_image_picker.ui.camera.CameraActivity
 import com.yalantis.ucrop.UCrop
@@ -124,6 +127,32 @@ class PickerActivity : AppCompatActivity(), View.OnClickListener {
                 tvCamera.setTextColor(it.accentColor)
                 tvGallery.setTextColor(it.accentColor)
                 view.setBackgroundColor(it.accentColor)
+
+                if (it.allowCamera) {
+                    clCamera.visible()
+                    view.visible()
+                } else {
+                    clCamera.gone()
+                    view.gone()
+                }
+
+                if (it.allowGallery) {
+                    clGallery.visible()
+                    view.visible()
+                } else {
+                    clGallery.gone()
+                    view.gone()
+                }
+
+                if (!it.allowCamera && !it.allowGallery) {
+                    this@PickerActivity.showAlert(
+                        getString(R.string.title_error),
+                        getString(R.string.msg_camera_gallery_enable_error),
+                        positiveText = "Okay",
+                        onPositive = {
+                            finish()
+                        })
+                }
             }
         }
     }

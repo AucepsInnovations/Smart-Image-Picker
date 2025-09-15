@@ -34,8 +34,10 @@ import com.aucepsinnovations.smart_image_picker.core.util.Constants
 import com.aucepsinnovations.smart_image_picker.core.util.disable
 import com.aucepsinnovations.smart_image_picker.core.util.dpToPx
 import com.aucepsinnovations.smart_image_picker.core.util.enable
+import com.aucepsinnovations.smart_image_picker.core.util.gone
 import com.aucepsinnovations.smart_image_picker.core.util.makeInvisible
 import com.aucepsinnovations.smart_image_picker.core.util.setupSystemBars
+import com.aucepsinnovations.smart_image_picker.core.util.showAlert
 import com.aucepsinnovations.smart_image_picker.core.util.visible
 import com.aucepsinnovations.smart_image_picker.databinding.ActivityGalleryBinding
 import com.aucepsinnovations.smart_image_picker.ui.camera.CameraActivity
@@ -158,6 +160,28 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
 
             pickerConfig?.let {
                 clMain.setBackgroundColor(it.backgroundColor)
+
+                if (it.allowCamera) {
+                    btnOpenCamera.visible()
+                } else {
+                    btnOpenCamera.gone()
+                }
+
+                if (it.allowGallery) {
+                    btnOpenGallery.visible()
+                } else {
+                    btnOpenGallery.gone()
+                }
+
+                if (!it.allowCamera && !it.allowGallery) {
+                    this@GalleryActivity.showAlert(
+                        getString(R.string.title_error),
+                        getString(R.string.msg_camera_gallery_enable_error),
+                        positiveText = "Okay",
+                        onPositive = {
+                            finish()
+                        })
+                }
             }
         }
     }
