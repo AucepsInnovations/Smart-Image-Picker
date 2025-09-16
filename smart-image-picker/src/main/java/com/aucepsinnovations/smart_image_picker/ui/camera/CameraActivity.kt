@@ -126,7 +126,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
 
         preview = Preview.Builder()
             .build()
-            .also { it.surfaceProvider = binding.viewFinder.surfaceProvider }
+            .also { it.setSurfaceProvider(binding.viewFinder.surfaceProvider) }
 
         lensFacing = CameraPreferences.getCameraMode(this)
 

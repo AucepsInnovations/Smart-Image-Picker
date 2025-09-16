@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.aucepsinnovations.smart_image_picker"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 21

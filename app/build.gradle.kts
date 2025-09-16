@@ -3,14 +3,23 @@ plugins {
     alias(libs.plugins.kotlin.android)
 }
 
+configurations.all {
+    resolutionStrategy {
+        val libsCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
+        force(libsCatalog.findLibrary("kotlin-stdlib").get())
+        force(libsCatalog.findLibrary("kotlin-stdlib-jdk7").get())
+        force(libsCatalog.findLibrary("kotlin-stdlib-jdk8").get())
+    }
+}
+
 android {
     namespace = "com.aucepsinnovations.smartimagepicker"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.aucepsinnovations.smartimagepicker"
         minSdk = 21
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
 
