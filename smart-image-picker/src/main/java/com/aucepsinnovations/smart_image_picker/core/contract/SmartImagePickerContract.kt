@@ -1,0 +1,33 @@
+package com.aucepsinnovations.smart_image_picker.core.contract
+
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import androidx.activity.result.contract.ActivityResultContract
+import com.aucepsinnovations.smart_image_picker.core.api.CountMode
+import com.aucepsinnovations.smart_image_picker.core.api.PickerConfig
+import com.aucepsinnovations.smart_image_picker.core.api.PickerResult
+import com.aucepsinnovations.smart_image_picker.core.util.Constants
+import com.aucepsinnovations.smart_image_picker.ui.gallery.GalleryActivity
+import com.aucepsinnovations.smart_image_picker.ui.picker.PickerActivity
+
+class SmartImagePickerContract : ActivityResultContract<PickerConfig, PickerResult>() {
+    override fun createIntent(
+        context: Context,
+        input: PickerConfig
+    ): Intent {
+        return if (input.countMode == CountMode.EXACT_ONE) {
+            Intent(context, PickerActivity::class.java).putExtra(Constants.CONFIG, input)
+        } else {
+            Intent(context, GalleryActivity::class.java).putExtra(Constants.CONFIG, input)
+        }
+    }
+
+    override fun parseResult(
+        resultCode: Int,
+        intent: Intent?
+    ): PickerResult {
+        if (resultCode != Activity.RESULT_OK || intent == null) return PickerResult.Canceled
+        return intent.getParcelableExtra(Constants.RESULT) ?: PickerResult.Canceled
+    }
+}
