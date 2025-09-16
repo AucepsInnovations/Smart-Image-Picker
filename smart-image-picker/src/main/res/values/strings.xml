@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="open_camera">Open Camera</string>
+    <string name="open_gallery">Open Gallery</string>
+    <string name="info_permission">Permission permanently denied. Please enable it in Settings.</string>
+    <string name="info_permission_denied">Permission request denied</string>
+    <string name="info_empty_photos">You don’t have any photos yet</string>
+    <string name="action_done">Done</string>
+    <string name="action_open_camera">Open Camera</string>
+    <string name="action_open_gallery">Open Gallery</string>
+    <string name="info_timeout_camera">Closing camera in 10 seconds…</string>
+    <string name="action_capture_from_camera">Capture from Camera</string>
+    <string name="action_choose_from_gallery">Choose from Gallery</string>
+    <string name="title_error">Error</string>
+    <string name="msg_camera_gallery_enable_error">At least one of the gallery or camera features must be enabled.</string>
+</resources>
