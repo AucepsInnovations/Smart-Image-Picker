@@ -44,7 +44,7 @@
         android:layout_height="wrap_content"
         android:divider="@drawable/divider_8"
         android:orientation="vertical"
-        android:paddingBottom="24dp"
+        android:paddingBottom="36dp"
         android:showDividers="middle"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
