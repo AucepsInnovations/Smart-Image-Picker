@@ -16,7 +16,7 @@ fun setupSystemBars(window: Window, color: Int) {
         window.decorView.setOnApplyWindowInsetsListener { view, insets ->
             val systemBarInsets = insets.getInsets(WindowInsets.Type.systemBars())
             view.setBackgroundColor(color)
-            view.setPadding(0, systemBarInsets.top, 0, 0)
+            view.setPadding(0, systemBarInsets.top, 0, systemBarInsets.bottom)
             insets
         }
 

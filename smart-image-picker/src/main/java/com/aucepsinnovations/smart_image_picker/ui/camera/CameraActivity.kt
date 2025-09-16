@@ -76,6 +76,11 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
         binding = ActivityCameraBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        window.decorView.apply {
+            systemUiVisibility =
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_FULLSCREEN
+        }
+
         pickerConfig = intent.getParcelableExtra(Constants.CONFIG)
         cameraExecutor = Executors.newSingleThreadExecutor()
 
