@@ -62,7 +62,7 @@ publishing {
         create<MavenPublication>("release") {
             groupId = "com.github.AucepsInnovations"
             artifactId = "SmartImagePicker"
-            version = "1.0.0-legacy"
+            version = "1.0.1-legacy"
 
             afterEvaluate {
                 from(components["release"])
