@@ -50,12 +50,7 @@ dependencies {
     implementation(libs.ucrop)
     implementation(libs.material)
 
-    implementation(libs.androidx.camera.core)
-    implementation(libs.androidx.camera.camera2)
-    implementation(libs.androidx.camera.lifecycle)
-    implementation(libs.androidx.camera.video)
-    implementation(libs.androidx.camera.view)
-    implementation(libs.androidx.camera.extensions)
+    implementation(libs.androidx.exifinterface)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -67,7 +62,7 @@ publishing {
         create<MavenPublication>("release") {
             groupId = "com.github.AucepsInnovations"
             artifactId = "SmartImagePicker"
-            version = "1.0.0-legacy"
+            version = "1.0.1-legacy"
 
             afterEvaluate {
                 from(components["release"])

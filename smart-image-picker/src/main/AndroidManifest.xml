@@ -2,9 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-feature android:name="android.hardware.camera.any" />
-
-    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
@@ -12,14 +9,6 @@
     <application>
         <activity
             android:name=".ui.picker.PickerActivity"
-            android:exported="false"
-            android:launchMode="singleTop"
-            android:screenOrientation="portrait"
-            android:theme="@style/LibraryTheme"
-            android:windowSoftInputMode="adjustResize"
-            tools:replace="android:theme" />
-        <activity
-            android:name=".ui.camera.CameraActivity"
             android:exported="false"
             android:launchMode="singleTop"
             android:screenOrientation="portrait"
@@ -38,6 +27,16 @@
             android:name="com.yalantis.ucrop.UCropActivity"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
     </application>
 
