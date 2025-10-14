@@ -7,6 +7,8 @@ import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import android.provider.Settings
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
@@ -19,7 +21,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.net.toUri
+import androidx.core.content.FileProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -40,8 +42,12 @@ import com.aucepsinnovations.smart_image_picker.core.util.setupSystemBars
 import com.aucepsinnovations.smart_image_picker.core.util.showAlert
 import com.aucepsinnovations.smart_image_picker.core.util.visible
 import com.aucepsinnovations.smart_image_picker.databinding.ActivityGalleryBinding
-import com.aucepsinnovations.smart_image_picker.ui.camera.CameraActivity
 import com.yalantis.ucrop.UCrop
+import java.io.File
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class GalleryActivity : AppCompatActivity(), View.OnClickListener,
     GalleryAdapter.OnItemClickListener {
@@ -53,6 +59,7 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
     private var canContinue = false
     private var canAddPhoto = true
     private lateinit var menuItem: MenuItem
+    private var currentPhotoUri: Uri? = null
 
     private val activityResultLauncher =
         registerForActivityResult(
@@ -66,7 +73,7 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
             }
 
             if (permissionGranted) {
-                openCamera()
+                startCamera()
             } else {
                 // Check if permanently denied
                 val permanentlyDenied = REQUIRED_PERMISSIONS.any { perm ->
@@ -95,12 +102,16 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
     private val cameraLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
-                val uriString = result.data?.getStringExtra(Constants.CROPPED_IMAGE_URI)
-                uriString?.let {
-                    val croppedUri = it.toUri()
-                    viewModel.addImage(croppedUri)
-                    buttonValidator()
+                currentPhotoUri?.let { uri ->
+                    Cropper.startCrop(this, uri, cropImageLauncher)
                 }
+            } else {
+                Toast.makeText(
+                    this,
+                    getString(R.string.msg_camera_gallery_enable_error),
+                    Toast.LENGTH_SHORT
+                ).show()
+                finish()
             }
         }
 
@@ -118,6 +129,7 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
                 val resultUri = result.data?.let { UCrop.getOutput(it) }
                 resultUri?.let { uri ->
                     viewModel.addImage(uri)
+                    currentPhotoUri?.let { deleteTempFile(it) }
                     buttonValidator()
                 }
             } else if (result.resultCode == UCrop.RESULT_ERROR) {
@@ -277,10 +289,45 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
         }
     }
 
-    private fun openCamera() {
-        val intent = Intent(this, CameraActivity::class.java)
-        intent.putExtra(Constants.CONFIG, pickerConfig)
-        cameraLauncher.launch(intent)
+    private fun startCamera() {
+        val photoFile = createImageFile()
+        val photoUri = FileProvider.getUriForFile(
+            this,
+            "${applicationContext.packageName}.fileprovider",
+            photoFile
+        )
+        currentPhotoUri = photoUri
+
+        val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+            putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+        }
+
+        if (cameraIntent.resolveActivity(packageManager) != null) {
+            cameraLauncher.launch(cameraIntent)
+        } else {
+            Toast.makeText(this, "No camera app found", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    @Throws(IOException::class)
+    private fun createImageFile(): File {
+        val timeStamp: String =
+            SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val storageDir: File = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+            ?: filesDir
+        return File.createTempFile(
+            "JPEG_${timeStamp}_",
+            ".jpg",
+            storageDir
+        )
+    }
+
+    private fun deleteTempFile(uri: Uri) {
+        try {
+            val file = File(uri.path ?: return)
+            if (file.exists()) file.delete()
+        } catch (_: Exception) {
+        }
     }
 
     private fun enableDragAndDrop(recyclerView: RecyclerView, adapter: GalleryAdapter) {
@@ -346,7 +393,7 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
         when (view?.id) {
             R.id.btn_open_camera -> {
                 if (allPermissionsGranted()) {
-                    openCamera()
+                    startCamera()
                 } else {
                     requestPermissions()
                 }
@@ -398,9 +445,7 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
 
     companion object {
         private val REQUIRED_PERMISSIONS =
-            mutableListOf(
-                Manifest.permission.CAMERA
-            ).apply {
+            mutableListOf<String>().apply {
                 if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
                     add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 }

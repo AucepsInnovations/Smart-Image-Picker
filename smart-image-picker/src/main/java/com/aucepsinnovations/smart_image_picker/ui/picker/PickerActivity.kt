@@ -6,6 +6,8 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import android.provider.Settings
 import android.view.View
 import android.widget.Toast
@@ -14,7 +16,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.net.toUri
+import androidx.core.content.FileProvider
 import com.aucepsinnovations.smart_image_picker.R
 import com.aucepsinnovations.smart_image_picker.core.api.PickerConfig
 import com.aucepsinnovations.smart_image_picker.core.api.PickerResult
@@ -25,13 +27,18 @@ import com.aucepsinnovations.smart_image_picker.core.util.gone
 import com.aucepsinnovations.smart_image_picker.core.util.showAlert
 import com.aucepsinnovations.smart_image_picker.core.util.visible
 import com.aucepsinnovations.smart_image_picker.databinding.ActivityPickerBinding
-import com.aucepsinnovations.smart_image_picker.ui.camera.CameraActivity
 import com.yalantis.ucrop.UCrop
+import java.io.File
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class PickerActivity : AppCompatActivity(), View.OnClickListener {
 
     private lateinit var binding: ActivityPickerBinding
     private var pickerConfig: PickerConfig? = null
+    private var currentPhotoUri: Uri? = null
 
     private val activityResultLauncher =
         registerForActivityResult(
@@ -74,11 +81,16 @@ class PickerActivity : AppCompatActivity(), View.OnClickListener {
     private val cameraLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
-                val uriString = result.data?.getStringExtra(Constants.CROPPED_IMAGE_URI)
-                uriString?.let {
-                    val croppedUri = it.toUri()
-                    returnResult(croppedUri)
+                currentPhotoUri?.let { uri ->
+                    Cropper.startCrop(this, uri, cropImageLauncher)
                 }
+            } else {
+                Toast.makeText(
+                    this,
+                    getString(R.string.msg_camera_gallery_enable_error),
+                    Toast.LENGTH_SHORT
+                ).show()
+                finish()
             }
         }
 
@@ -175,9 +187,44 @@ class PickerActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun startCamera() {
-        val intent = Intent(this@PickerActivity, CameraActivity::class.java)
-        intent.putExtra(Constants.CONFIG, pickerConfig)
-        cameraLauncher.launch(intent)
+        val photoFile = createImageFile()
+        val photoUri = FileProvider.getUriForFile(
+            this,
+            "${applicationContext.packageName}.fileprovider",
+            photoFile
+        )
+        currentPhotoUri = photoUri
+
+        val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+            putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+        }
+
+        if (cameraIntent.resolveActivity(packageManager) != null) {
+            cameraLauncher.launch(cameraIntent)
+        } else {
+            Toast.makeText(this, "No camera app found", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    @Throws(IOException::class)
+    private fun createImageFile(): File {
+        val timeStamp: String =
+            SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val storageDir: File = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+            ?: filesDir
+        return File.createTempFile(
+            "JPEG_${timeStamp}_",
+            ".jpg",
+            storageDir
+        )
+    }
+
+    private fun deleteTempFile(uri: Uri) {
+        try {
+            val file = File(uri.path ?: return)
+            if (file.exists()) file.delete()
+        } catch (_: Exception) {
+        }
     }
 
     fun openGallery() {
@@ -190,6 +237,7 @@ class PickerActivity : AppCompatActivity(), View.OnClickListener {
             putExtra(Constants.RESULT, result)
         }
         setResult(RESULT_OK, intent)
+        currentPhotoUri?.let { deleteTempFile(it) }
         finish()
     }
 
@@ -219,9 +267,7 @@ class PickerActivity : AppCompatActivity(), View.OnClickListener {
 
     companion object {
         private val REQUIRED_PERMISSIONS =
-            mutableListOf(
-                Manifest.permission.CAMERA
-            ).apply {
+            mutableListOf<String>().apply {
                 if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
                     add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 }
