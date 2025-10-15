@@ -1,6 +1,7 @@
 package com.aucepsinnovations.smart_image_picker.core.api
 
 import android.os.Parcelable
+import androidx.annotation.DrawableRes
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
@@ -12,7 +13,11 @@ data class PickerConfig(
     val compressMaxBytes: Long = 3_000_000, // ~3MB target (0 = no compression)
     val backgroundColor: Int = 0xFF444444.toInt(), // Default dark gray
     val accentColor: Int = 0xFFFFFFFF.toInt(), // Default white
+    val backButtonColor: Int = 0xFF000000.toInt(), // Default black
     val titleColor: Int = 0xFF000000.toInt(), // Default black
+    val actionButtonColor: Int = 0xFF000000.toInt(), // Default black
     val textColor: Int = 0xFF000000.toInt(), // Default black
-    val buttonColor: Int = 0xFFFFFFFF.toInt() // Default white
+    val buttonColor: Int = 0xFFFFFFFF.toInt(), // Default white
+    val emptyTextColor: Int = 0xFFFFFFFF.toInt(), // Default white
+    @DrawableRes val backButtonIconRes: Int? = null
 ) : Parcelable
