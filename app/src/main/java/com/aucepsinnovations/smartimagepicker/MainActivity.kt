@@ -80,7 +80,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                             backgroundColor = Color.DKGRAY,
                             buttonColor = Color.WHITE,
                             titleColor = Color.BLACK,
-                            textColor = Color.BLACK
+                            textColor = Color.BLACK,
+                            backButtonColor = Color.BLACK,
+                            actionButtonColor = Color.BLACK,
+                            emptyTextColor = Color.WHITE
                         )
                     )
                 }
@@ -93,7 +96,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                             backgroundColor = Color.DKGRAY,
                             buttonColor = Color.WHITE,
                             titleColor = Color.BLACK,
-                            textColor = Color.BLACK
+                            textColor = Color.BLACK,
+                            backButtonColor = Color.BLACK,
+                            actionButtonColor = Color.BLACK,
+                            emptyTextColor = Color.WHITE
                         )
                     )
                 }
@@ -106,7 +112,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                             backgroundColor = Color.DKGRAY,
                             buttonColor = Color.WHITE,
                             titleColor = Color.BLACK,
-                            textColor = Color.BLACK
+                            textColor = Color.BLACK,
+                            backButtonColor = Color.BLACK,
+                            actionButtonColor = Color.BLACK,
+                            emptyTextColor = Color.WHITE
                         )
                     )
                 }
@@ -119,7 +128,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                             backgroundColor = Color.DKGRAY,
                             buttonColor = Color.WHITE,
                             titleColor = Color.BLACK,
-                            textColor = Color.BLACK
+                            textColor = Color.BLACK,
+                            backButtonColor = Color.BLACK,
+                            actionButtonColor = Color.BLACK,
+                            emptyTextColor = Color.WHITE
                         )
                     )
                 }
@@ -132,7 +144,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                             backgroundColor = Color.DKGRAY,
                             buttonColor = Color.WHITE,
                             titleColor = Color.BLACK,
-                            textColor = Color.BLACK
+                            textColor = Color.BLACK,
+                            backButtonColor = Color.BLACK,
+                            actionButtonColor = Color.BLACK,
+                            emptyTextColor = Color.WHITE
                         )
                     )
                 }
@@ -145,7 +160,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                             backgroundColor = Color.DKGRAY,
                             buttonColor = Color.WHITE,
                             titleColor = Color.BLACK,
-                            textColor = Color.BLACK
+                            textColor = Color.BLACK,
+                            backButtonColor = Color.BLACK,
+                            actionButtonColor = Color.BLACK,
+                            emptyTextColor = Color.WHITE
                         )
                     )
                 }

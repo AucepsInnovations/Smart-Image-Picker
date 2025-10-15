@@ -164,6 +164,7 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
                 clMain.setBackgroundColor(it.backgroundColor)
                 (btnOpenCamera.background as? GradientDrawable)?.setColor(it.buttonColor)
                 (btnOpenGallery.background as? GradientDrawable)?.setColor(it.buttonColor)
+                tvEmpty.setTextColor(it.emptyTextColor)
                 btnOpenCamera.setTextColor(it.textColor)
                 btnOpenGallery.setTextColor(it.textColor)
             }
@@ -202,6 +203,13 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
         setSupportActionBar(binding.toolbar)
         supportActionBar?.apply {
             title = "Choose or Capture Image"
+
+            pickerConfig?.backButtonIconRes?.let {
+                setHomeAsUpIndicator(it)
+            } ?: run {
+                setHomeAsUpIndicator(R.drawable.ic_outline_arrow_back_24)
+            }
+
             setDisplayHomeAsUpEnabled(true)
         }
 
@@ -209,8 +217,9 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
             setNavigationOnClickListener {
                 onBackPressedDispatcher.onBackPressed()
             }
+            setPadding(16, 0, 16, 0)
             setTitleTextColor(pickerConfig!!.textColor)
-            navigationIcon?.setTint(pickerConfig!!.textColor)
+            navigationIcon?.setTint(pickerConfig!!.backButtonColor)
         }
     }
 
@@ -411,7 +420,7 @@ class GalleryActivity : AppCompatActivity(), View.OnClickListener,
 
         val s = SpannableString(menuItem.title)
         s.setSpan(
-            ForegroundColorSpan(pickerConfig!!.titleColor),
+            ForegroundColorSpan(pickerConfig!!.actionButtonColor),
             0,
             s.length,
             0
