@@ -16,6 +16,8 @@ android {
         consumerProguardFiles("consumer-rules.pro")
     }
 
+    resourcePrefix = "smart_image_picker"
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -62,7 +64,7 @@ publishing {
         create<MavenPublication>("release") {
             groupId = "com.github.AucepsInnovations"
             artifactId = "SmartImagePicker"
-            version = "1.0.2-legacy"
+            version = "1.0.3-legacy"
 
             afterEvaluate {
                 from(components["release"])
