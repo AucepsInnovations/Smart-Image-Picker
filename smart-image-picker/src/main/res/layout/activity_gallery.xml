@@ -52,7 +52,7 @@
 
         <Button
             android:id="@+id/btn_open_camera"
-            style="@style/PrimaryButtonStyle"
+            style="@style/SmartImagePickerPrimaryButtonStyle"
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:layout_marginHorizontal="16dp"
@@ -61,7 +61,7 @@
 
         <Button
             android:id="@+id/btn_open_gallery"
-            style="@style/PrimaryButtonStyle"
+            style="@style/SmartImagePickerPrimaryButtonStyle"
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:layout_marginHorizontal="16dp"
